@@ -53,7 +53,7 @@ public class PayrollTableManager {
         fedRatePanel = new JPanel();
 
         fedRatePanel.setBorder(
-                BorderFactory.createTitledBorder("Fed Rate")
+                BorderFactory.createTitledBorder("Fed Rate %")
         );
 
         fedRatePanel.add(fedRateField);

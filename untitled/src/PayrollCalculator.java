@@ -78,6 +78,6 @@ public class PayrollCalculator {
             double gross,
             String fed_rate
     ){
-        return gross*parseDouble(fed_rate);
+        return gross*parseDouble(fed_rate)/100;
     }
 }
