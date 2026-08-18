@@ -29,6 +29,8 @@ public class PayrollTableManager {
     private final JTable table;
     private final DefaultTableModel tableModel;
     private final JFrame frame;
+    private final JPanel fedRatePanel;
+    private final JTextField fedRateField;
 
     private final PayrollCalculator calculator =
             new PayrollCalculator();
@@ -40,6 +42,45 @@ public class PayrollTableManager {
     public PayrollTableManager(JFrame frame) {
 
         this.frame = frame;
+
+        // =========================
+        // FED RATE
+        // =========================
+
+        fedRateField = new JTextField(8);
+        fedRateField.setText("0");
+
+        fedRatePanel = new JPanel();
+
+        fedRatePanel.setBorder(
+                BorderFactory.createTitledBorder("Fed Rate")
+        );
+
+        fedRatePanel.add(fedRateField);
+
+        // Recalculate when Enter is pressed
+        fedRateField.addActionListener(e -> {
+            validateFedRate();
+            calculateAllRows();
+        });
+
+        // Recalculate when the field loses focus
+        fedRateField.addFocusListener(
+                new java.awt.event.FocusAdapter() {
+
+                    @Override
+                    public void focusLost(
+                            java.awt.event.FocusEvent e) {
+
+                        validateFedRate();
+                        calculateAllRows();
+                    }
+                }
+        );
+
+        // =========================
+        // COLUMN NAMES
+        // =========================
 
         String[] columnNames = {
                 "Pay Period #",
@@ -60,12 +101,19 @@ public class PayrollTableManager {
                 "BC Tax",
                 "Net Pay",
                 "Regular Pay",
-                "OT Total",
+                "OT Pay",
                 "SLG Tax",
                 "Total Deductions"
         };
 
-        tableModel = new DefaultTableModel(columnNames, 0) {
+        // =========================
+        // TABLE MODEL
+        // =========================
+
+        tableModel = new DefaultTableModel(
+                columnNames,
+                0
+        ) {
 
             @Override
             public boolean isCellEditable(
@@ -90,6 +138,14 @@ public class PayrollTableManager {
         return table;
     }
 
+    public JPanel getFedRatePanel() {
+        return fedRatePanel;
+    }
+
+    public JTextField getFedRateField() {
+        return fedRateField;
+    }
+
     // =========================
     // GET TABLE MODEL
     // =========================
@@ -99,7 +155,7 @@ public class PayrollTableManager {
     }
 
     // =========================
-    // VALIDATION
+    // VALIDATION SETUP
     // =========================
 
     private void setupValidation() {
@@ -186,6 +242,63 @@ public class PayrollTableManager {
     }
 
     // =========================
+    // VALIDATE FED RATE
+    // =========================
+
+    private void validateFedRate() {
+
+        String value =
+                fedRateField.getText().trim();
+
+        if (value.isEmpty()) {
+
+            fedRateField.setText("0");
+            return;
+        }
+
+        try {
+
+            double rate =
+                    Double.parseDouble(value);
+
+            if (rate < 0) {
+
+                JOptionPane.showMessageDialog(
+                        frame,
+                        "Fed Rate cannot be negative."
+                );
+
+                fedRateField.setText("0");
+            }
+
+        } catch (NumberFormatException error) {
+
+            JOptionPane.showMessageDialog(
+                    frame,
+                    "Please enter a valid number for the Fed Rate."
+            );
+
+            fedRateField.setText("0");
+        }
+    }
+
+    // =========================
+    // CALCULATE ALL ROWS
+    // =========================
+
+    private void calculateAllRows() {
+
+        stopEditing();
+
+        for (int row = 0;
+             row < tableModel.getRowCount();
+             row++) {
+
+            calculateRow(row);
+        }
+    }
+
+    // =========================
     // CALCULATE ROW
     // =========================
 
@@ -209,9 +322,13 @@ public class PayrollTableManager {
                 );
 
         double totalGross =
-                regularPay +
-                        otPay +
-                        extra;
+                regularPay + otPay + extra;
+
+        double federal =
+                calculator.calculateFedRate(
+                        totalGross,
+                        fedRateField.getText()
+                );
 
         tableModel.setValueAt(
                 String.format("%.2f", regularPay),
@@ -230,6 +347,12 @@ public class PayrollTableManager {
                 row,
                 TOTAL_GROSS
         );
+
+        tableModel.setValueAt(
+                String.format("%.2f", federal),
+                row,
+                FEDERAL
+        );
     }
 
     // =========================
@@ -239,6 +362,8 @@ public class PayrollTableManager {
     public void loadEmployee(Employee employee) {
 
         tableModel.setRowCount(0);
+
+        fedRateField.setText(employee.fed_rate);
 
         for (int i = 0;
              i < PayrollData.PAY_PERIODS.length;
@@ -284,6 +409,11 @@ public class PayrollTableManager {
     public void saveEmployee(Employee employee) {
 
         stopEditing();
+
+        validateFedRate();
+
+        employee.fed_rate =
+                fedRateField.getText().trim();
 
         for (int i = 0;
              i < tableModel.getRowCount();
@@ -347,7 +477,6 @@ public class PayrollTableManager {
             calculateRow(row);
 
         } catch (NumberFormatException ignored) {
-
         }
     }
 
@@ -392,7 +521,6 @@ public class PayrollTableManager {
             calculateRow(row);
 
         } catch (NumberFormatException ignored) {
-
         }
     }
 
@@ -424,6 +552,7 @@ public class PayrollTableManager {
     public void stopEditing() {
 
         if (table.isEditing()) {
+
             table.getCellEditor()
                     .stopCellEditing();
         }

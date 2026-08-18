@@ -70,4 +70,14 @@ public class PayrollCalculator {
                 extra
         );
     }
+
+    // =========================
+    // TOTAL FEDERAL
+    // =========================
+    public double calculateFedRate(
+            double gross,
+            String fed_rate
+    ){
+        return gross*parseDouble(fed_rate);
+    }
 }

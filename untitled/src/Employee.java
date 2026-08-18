@@ -13,10 +13,13 @@ public class Employee {
     String[] ot_rate_changed_on = new String[num_rows];
 
     String[] extra = new String[num_rows];
+    String fed_rate;
 
     public Employee(String name) {
 
         this.name = name;
+
+        fed_rate = "0";
 
         // Make the array blank by default on all categories
         for (int i = 0; i < num_rows; i++) {
