@@ -1,5 +1,6 @@
 import javax.swing.*;
 import java.awt.*;
+import java.util.Map;
 
 public class PayrollGUI {
 
@@ -15,63 +16,108 @@ public class PayrollGUI {
 
     private boolean changingEmployee = false;
 
+
     // =========================
     // CONSTRUCTOR
     // =========================
 
-    public PayrollGUI(EmployeeManager employeeManager) {
+    public PayrollGUI(
+            EmployeeManager employeeManager
+    ) {
 
-        this.employeeManager = employeeManager;
+        this.employeeManager =
+                employeeManager;
+
 
         // =========================
         // FRAME
         // =========================
 
-        frame = new JFrame("Payroll System " + version);
+        frame =
+                new JFrame(
+                        "Payroll System " +
+                                version
+                );
 
-        frame.setSize(1200, 700);
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setLayout(new BorderLayout());
+        frame.setSize(
+                1200,
+                700
+        );
+
+        frame.setDefaultCloseOperation(
+                JFrame.EXIT_ON_CLOSE
+        );
+
+        frame.setLayout(
+                new BorderLayout()
+        );
+
 
         // =========================
         // MANAGERS
         // =========================
 
-        tableManager = new PayrollTableManager(frame);
+        tableManager =
+                new PayrollTableManager(
+                        frame
+                );
 
-        PayrollTotalsManager totalsManager = new PayrollTotalsManager(
-                frame,
-                employeeManager,
-                tableManager
-        );
+
+        PayrollTotalsManager totalsManager =
+                new PayrollTotalsManager(
+                        frame,
+                        employeeManager,
+                        tableManager
+                );
+
 
         // =========================
         // TOP PANEL
         // =========================
 
         JPanel topPanel =
-                new JPanel(new BorderLayout());
+                new JPanel(
+                        new BorderLayout()
+                );
+
 
         JPanel employeeControlsPanel =
                 new JPanel();
 
+
         employeeNameLabel =
-                new JLabel("Current Employee:");
+                new JLabel(
+                        "Current Employee:"
+                );
+
 
         employeeSelector =
                 new JComboBox<>();
 
+
         JButton previousButton =
-                new JButton("< Previous");
+                new JButton(
+                        "< Previous"
+                );
+
 
         JButton nextButton =
-                new JButton("Next >");
+                new JButton(
+                        "Next >"
+                );
+
 
         JButton addEmployeeButton =
-                new JButton("Add Employee");
+                new JButton(
+                        "Add Employee"
+                );
+
 
         JButton removeEmployeeButton =
-                new JButton("Remove Employee");
+                new JButton(
+                        "Remove Employee"
+                );
+
 
         employeeControlsPanel.add(
                 employeeNameLabel
@@ -97,20 +143,24 @@ public class PayrollGUI {
                 removeEmployeeButton
         );
 
+
         topPanel.add(
                 employeeControlsPanel,
                 BorderLayout.WEST
         );
+
 
         topPanel.add(
                 tableManager.getFedRatePanel(),
                 BorderLayout.EAST
         );
 
+
         frame.add(
                 topPanel,
                 BorderLayout.NORTH
         );
+
 
         // =========================
         // TABLE
@@ -121,10 +171,12 @@ public class PayrollGUI {
                         tableManager.getTable()
                 );
 
+
         frame.add(
                 scrollPane,
                 BorderLayout.CENTER
         );
+
 
         // =========================
         // BOTTOM PANEL
@@ -133,20 +185,30 @@ public class PayrollGUI {
         JPanel bottomPanel =
                 new JPanel();
 
+
         JButton changeHourlyRateButton =
                 new JButton(
                         "Mass Change Hourly Rate"
                 );
+
 
         JButton changeOTRateButton =
                 new JButton(
                         "Mass Change OT Rate"
                 );
 
+
         JButton viewTotalsButton =
                 new JButton(
                         "View Totals"
                 );
+
+
+        JButton makeCheckButton =
+                new JButton(
+                        "Generate Check"
+                );
+
 
         bottomPanel.add(
                 changeHourlyRateButton
@@ -160,10 +222,16 @@ public class PayrollGUI {
                 viewTotalsButton
         );
 
+        bottomPanel.add(
+                makeCheckButton
+        );
+
+
         frame.add(
                 bottomPanel,
                 BorderLayout.SOUTH
         );
+
 
         // =========================
         // BUTTON EVENTS
@@ -195,9 +263,16 @@ public class PayrollGUI {
                 changeOTRateButton
         );
 
+
         totalsManager.setupViewTotalsButton(
                 viewTotalsButton
         );
+
+
+        setupMakeCheckButton(
+                makeCheckButton
+        );
+
 
         // =========================
         // INITIAL SETUP
@@ -207,10 +282,17 @@ public class PayrollGUI {
 
         loadCurrentEmployee();
 
-        frame.setLocationRelativeTo(null);
 
-        frame.setVisible(true);
+        frame.setLocationRelativeTo(
+                null
+        );
+
+
+        frame.setVisible(
+                true
+        );
     }
+
 
     // =========================
     // EMPLOYEE SELECTOR
@@ -218,336 +300,690 @@ public class PayrollGUI {
 
     private void setupEmployeeSelector() {
 
-        employeeSelector.addActionListener(e -> {
+        employeeSelector.addActionListener(
+                e -> {
 
-            if (changingEmployee) {
-                return;
-            }
+                    if (changingEmployee) {
+                        return;
+                    }
 
-            int selectedIndex =
-                    employeeSelector.getSelectedIndex();
 
-            if (selectedIndex >= 0 &&
-                    selectedIndex !=
-                            employeeManager.getCurrentEmployeeIndex()) {
+                    int selectedIndex =
+                            employeeSelector
+                                    .getSelectedIndex();
 
-                switchEmployee(
-                        selectedIndex
-                );
-            }
-        });
+
+                    if (
+                            selectedIndex >= 0 &&
+                                    selectedIndex !=
+                                            employeeManager
+                                                    .getCurrentEmployeeIndex()
+                    ) {
+
+                        switchEmployee(
+                                selectedIndex
+                        );
+                    }
+                }
+        );
     }
+
 
     // =========================
     // PREVIOUS BUTTON
     // =========================
 
     private void setupPreviousButton(
-            JButton button) {
+            JButton button
+    ) {
 
-        button.addActionListener(e -> {
+        button.addActionListener(
+                e -> {
 
-            int current =
-                    employeeManager
-                            .getCurrentEmployeeIndex();
+                    int current =
+                            employeeManager
+                                    .getCurrentEmployeeIndex();
 
-            if (current > 0) {
 
-                employeeSelector.setSelectedIndex(
-                        current - 1
-                );
-            }
-        });
+                    if (current > 0) {
+
+                        employeeSelector
+                                .setSelectedIndex(
+                                        current - 1
+                                );
+                    }
+                }
+        );
     }
+
 
     // =========================
     // NEXT BUTTON
     // =========================
 
     private void setupNextButton(
-            JButton button) {
+            JButton button
+    ) {
 
-        button.addActionListener(e -> {
+        button.addActionListener(
+                e -> {
 
-            int current =
-                    employeeManager
-                            .getCurrentEmployeeIndex();
+                    int current =
+                            employeeManager
+                                    .getCurrentEmployeeIndex();
 
-            if (current <
-                    employeeManager.getEmployeeCount() - 1) {
 
-                employeeSelector.setSelectedIndex(
-                        current + 1
-                );
-            }
-        });
+                    if (
+                            current <
+                                    employeeManager
+                                            .getEmployeeCount() - 1
+                    ) {
+
+                        employeeSelector
+                                .setSelectedIndex(
+                                        current + 1
+                                );
+                    }
+                }
+        );
     }
+
 
     // =========================
     // ADD EMPLOYEE
     // =========================
 
     private void setupAddEmployeeButton(
-            JButton button) {
+            JButton button
+    ) {
 
-        button.addActionListener(e -> {
+        button.addActionListener(
+                e -> {
 
-            String name =
-                    JOptionPane.showInputDialog(
-                            frame,
-                            "Enter employee name:"
+                    String name =
+                            JOptionPane.showInputDialog(
+                                    frame,
+                                    "Enter employee name:"
+                            );
+
+
+                    if (
+                            name == null ||
+                                    name.trim().isEmpty()
+                    ) {
+
+                        return;
+                    }
+
+
+                    saveCurrentEmployee();
+
+
+                    employeeManager.addEmployee(
+                            new Employee(
+                                    name.trim()
+                            )
                     );
 
-            if (name == null ||
-                    name.trim().isEmpty()) {
 
-                return;
-            }
+                    employeeManager.setCurrentEmployeeIndex(
+                            employeeManager
+                                    .getEmployeeCount() - 1
+                    );
 
-            saveCurrentEmployee();
 
-            employeeManager.addEmployee(
-                    new Employee(
-                            name.trim()
-                    )
-            );
+                    changingEmployee = true;
 
-            employeeManager.setCurrentEmployeeIndex(
-                    employeeManager.getEmployeeCount() - 1
-            );
 
-            changingEmployee = true;
+                    updateEmployeeSelector();
 
-            updateEmployeeSelector();
 
-            employeeSelector.setSelectedIndex(
-                    employeeManager.getCurrentEmployeeIndex()
-            );
+                    employeeSelector.setSelectedIndex(
+                            employeeManager
+                                    .getCurrentEmployeeIndex()
+                    );
 
-            changingEmployee = false;
 
-            loadCurrentEmployee();
-        });
+                    changingEmployee = false;
+
+
+                    loadCurrentEmployee();
+                }
+        );
     }
+
 
     // =========================
     // REMOVE EMPLOYEE
     // =========================
 
     private void setupRemoveEmployeeButton(
-            JButton button) {
+            JButton button
+    ) {
 
-        button.addActionListener(e -> {
+        button.addActionListener(
+                e -> {
 
-            if (employeeManager.getEmployeeCount() <= 1) {
+                    if (
+                            employeeManager
+                                    .getEmployeeCount() <= 1
+                    ) {
 
-                JOptionPane.showMessageDialog(
-                        frame,
-                        "You must have at least one employee."
-                );
+                        JOptionPane.showMessageDialog(
+                                frame,
+                                "You must have at least one employee."
+                        );
 
-                return;
-            }
+                        return;
+                    }
 
-            String employeeName =
+
+                    String employeeName =
+                            employeeManager
+                                    .getCurrentEmployee()
+                                    .name;
+
+
+                    int choice =
+                            JOptionPane.showConfirmDialog(
+                                    frame,
+
+                                    "Remove " +
+                                            employeeName +
+                                            "? (THIS ACTION CAN NOT BE UNDONE!)",
+
+                                    "Remove Employee",
+
+                                    JOptionPane.YES_NO_OPTION
+                            );
+
+
+                    if (
+                            choice !=
+                                    JOptionPane.YES_OPTION
+                    ) {
+
+                        return;
+                    }
+
+
+                    saveCurrentEmployee();
+
+
                     employeeManager
-                            .getCurrentEmployee()
-                            .name;
+                            .removeCurrentEmployee();
 
-            int choice =
-                    JOptionPane.showConfirmDialog(
-                            frame,
-                            "Remove " +
-                                    employeeName +
-                                    "? (THIS ACTION CAN NOT BE UNDONE!)",
-                            "Remove Employee",
-                            JOptionPane.YES_NO_OPTION
+
+                    changingEmployee = true;
+
+
+                    updateEmployeeSelector();
+
+
+                    employeeSelector.setSelectedIndex(
+                            employeeManager
+                                    .getCurrentEmployeeIndex()
                     );
 
-            if (choice !=
-                    JOptionPane.YES_OPTION) {
 
-                return;
-            }
+                    changingEmployee = false;
 
-            saveCurrentEmployee();
 
-            employeeManager.removeCurrentEmployee();
-
-            changingEmployee = true;
-
-            updateEmployeeSelector();
-
-            employeeSelector.setSelectedIndex(
-                    employeeManager
-                            .getCurrentEmployeeIndex()
-            );
-
-            changingEmployee = false;
-
-            loadCurrentEmployee();
-        });
+                    loadCurrentEmployee();
+                }
+        );
     }
+
 
     // =========================
     // HOURLY RATE BUTTON
     // =========================
 
     private void setupHourlyRateButton(
-            JButton button) {
+            JButton button
+    ) {
 
-        button.addActionListener(e -> {
+        button.addActionListener(
+                e -> {
 
-            tableManager.stopEditing();
+                    tableManager.stopEditing();
 
-            int row =
-                    tableManager
-                            .getTable()
-                            .getSelectedRow();
 
-            if (row == -1) {
+                    int row =
+                            tableManager
+                                    .getTable()
+                                    .getSelectedRow();
 
-                JOptionPane.showMessageDialog(
-                        frame,
-                        "Please select a pay period first."
-                );
 
-                return;
-            }
+                    if (row == -1) {
 
-            String newRate =
-                    JOptionPane.showInputDialog(
-                            frame,
-                            "Enter the new hourly rate for the rest of the rows:"
-                    );
-
-            if (newRate == null ||
-                    newRate.trim().isEmpty()) {
-
-                return;
-            }
-
-            try {
-
-                double rate =
-                        Double.parseDouble(
-                                newRate.trim()
+                        JOptionPane.showMessageDialog(
+                                frame,
+                                "Please select a pay period first."
                         );
 
-                if (rate < 0) {
+                        return;
+                    }
 
-                    JOptionPane.showMessageDialog(
-                            frame,
-                            "Hourly rate cannot be negative."
-                    );
 
-                    return;
+                    String newRate =
+                            JOptionPane.showInputDialog(
+                                    frame,
+                                    "Enter the new hourly rate for the rest of the rows:"
+                            );
+
+
+                    if (
+                            newRate == null ||
+                                    newRate.trim().isEmpty()
+                    ) {
+
+                        return;
+                    }
+
+
+                    try {
+
+                        double rate =
+                                Double.parseDouble(
+                                        newRate.trim()
+                                );
+
+
+                        if (rate < 0) {
+
+                            JOptionPane.showMessageDialog(
+                                    frame,
+                                    "Hourly rate cannot be negative."
+                            );
+
+                            return;
+                        }
+
+
+                        tableManager.changeHourlyRate(
+                                row,
+                                newRate
+                        );
+
+
+                        saveCurrentEmployee();
+
+
+                    } catch (
+                            NumberFormatException error
+                    ) {
+
+                        JOptionPane.showMessageDialog(
+                                frame,
+                                "Please enter a valid number for the hourly rate."
+                        );
+                    }
                 }
-
-                tableManager.changeHourlyRate(
-                        row,
-                        newRate
-                );
-
-                saveCurrentEmployee();
-
-            } catch (NumberFormatException error) {
-
-                JOptionPane.showMessageDialog(
-                        frame,
-                        "Please enter a valid number for the hourly rate."
-                );
-            }
-        });
+        );
     }
+
 
     // =========================
     // OT RATE BUTTON
     // =========================
 
     private void setupOTRateButton(
-            JButton button) {
+            JButton button
+    ) {
 
-        button.addActionListener(e -> {
+        button.addActionListener(
+                e -> {
 
-            tableManager.stopEditing();
+                    tableManager.stopEditing();
 
-            int row =
-                    tableManager
-                            .getTable()
-                            .getSelectedRow();
 
-            if (row == -1) {
+                    int row =
+                            tableManager
+                                    .getTable()
+                                    .getSelectedRow();
 
-                JOptionPane.showMessageDialog(
-                        frame,
-                        "Please select a pay period first."
-                );
 
-                return;
-            }
+                    if (row == -1) {
 
-            String newRate =
-                    JOptionPane.showInputDialog(
-                            frame,
-                            "Enter the new OT rate for the rest of the rows:"
-                    );
-
-            if (newRate == null ||
-                    newRate.trim().isEmpty()) {
-
-                return;
-            }
-
-            try {
-
-                double rate =
-                        Double.parseDouble(
-                                newRate.trim()
+                        JOptionPane.showMessageDialog(
+                                frame,
+                                "Please select a pay period first."
                         );
 
-                if (rate < 0) {
+                        return;
+                    }
 
-                    JOptionPane.showMessageDialog(
-                            frame,
-                            "OT rate cannot be negative."
-                    );
 
-                    return;
+                    String newRate =
+                            JOptionPane.showInputDialog(
+                                    frame,
+                                    "Enter the new OT rate for the rest of the rows:"
+                            );
+
+
+                    if (
+                            newRate == null ||
+                                    newRate.trim().isEmpty()
+                    ) {
+
+                        return;
+                    }
+
+
+                    try {
+
+                        double rate =
+                                Double.parseDouble(
+                                        newRate.trim()
+                                );
+
+
+                        if (rate < 0) {
+
+                            JOptionPane.showMessageDialog(
+                                    frame,
+                                    "OT rate cannot be negative."
+                            );
+
+                            return;
+                        }
+
+
+                        tableManager.changeOTRate(
+                                row,
+                                newRate
+                        );
+
+
+                        saveCurrentEmployee();
+
+
+                    } catch (
+                            NumberFormatException error
+                    ) {
+
+                        JOptionPane.showMessageDialog(
+                                frame,
+                                "Please enter a valid number for the OT rate."
+                        );
+                    }
                 }
-
-                tableManager.changeOTRate(
-                        row,
-                        newRate
-                );
-
-                saveCurrentEmployee();
-
-            } catch (NumberFormatException error) {
-
-                JOptionPane.showMessageDialog(
-                        frame,
-                        "Please enter a valid number for the OT rate."
-                );
-            }
-        });
+        );
     }
+
+
+    // =========================
+    // GENERATE CHECK BUTTON
+    // =========================
+
+    private void setupMakeCheckButton(
+            JButton button
+    ) {
+
+        button.addActionListener(
+                e -> generateCheck()
+        );
+    }
+
+
+    // =========================
+    // GENERATE CHECK
+    // =========================
+
+    private void generateCheck() {
+
+        // Make sure the latest table edits
+        // are saved before generating.
+        tableManager.stopEditing();
+
+        saveCurrentEmployee();
+
+
+        Employee employee =
+                employeeManager
+                        .getCurrentEmployee();
+
+
+        if (employee == null) {
+
+            JOptionPane.showMessageDialog(
+                    frame,
+                    "No employee is currently selected."
+            );
+
+            return;
+        }
+
+
+        // ==========================================
+        // SELECT PAY PERIOD
+        // ==========================================
+
+        String[] options =
+                new String[
+                        PayrollData.PAY_PERIODS.length
+                        ];
+
+
+        for (
+                int i = 0;
+                i < PayrollData.PAY_PERIODS.length;
+                i++
+        ) {
+
+            options[i] =
+                    "Pay Period " +
+                            PayrollData.PAY_PERIODS[i][0] +
+                            " | " +
+                            PayrollData.PAY_PERIODS[i][1] +
+                            " to " +
+                            PayrollData.PAY_PERIODS[i][2];
+        }
+
+
+        String selected =
+                (String) JOptionPane.showInputDialog(
+                        frame,
+
+                        "Select a pay period:",
+
+                        "Generate Check",
+
+                        JOptionPane.QUESTION_MESSAGE,
+
+                        null,
+
+                        options,
+
+                        options[0]
+                );
+
+
+        if (selected == null) {
+            return;
+        }
+
+
+        // ==========================================
+        // FIND SELECTED PERIOD
+        // ==========================================
+
+        int selectedIndex = 0;
+
+
+        for (
+                int i = 0;
+                i < options.length;
+                i++
+        ) {
+
+            if (
+                    options[i].equals(
+                            selected
+                    )
+            ) {
+
+                selectedIndex = i;
+                break;
+            }
+        }
+
+
+        // ==========================================
+        // CURRENT PAY PERIOD
+        // ==========================================
+
+        boolean[] currentPeriod =
+                new boolean[
+                        PayrollData.PAY_PERIODS.length
+                        ];
+
+
+        currentPeriod[selectedIndex] = true;
+
+
+        Map<String, Double> currentTotals =
+                tableManager.calculateEmployeeTotals(
+                        employee,
+                        currentPeriod
+                );
+
+
+        // ==========================================
+        // YTD
+        // ==========================================
+
+        boolean[] ytdPeriods =
+                new boolean[
+                        PayrollData.PAY_PERIODS.length
+                        ];
+
+
+        // Include every pay period from Period 1
+        // through the selected pay period.
+        for (
+                int i = 0;
+                i <= selectedIndex;
+                i++
+        ) {
+
+            ytdPeriods[i] = true;
+        }
+
+
+        Map<String, Double> ytdTotals =
+                tableManager.calculateEmployeeTotals(
+                        employee,
+                        ytdPeriods
+                );
+
+
+        // ==========================================
+        // PAY PERIOD INFORMATION
+        // ==========================================
+
+        String payDate =
+                PayrollData.PAY_PERIODS[
+                        selectedIndex
+                        ][3];
+
+
+        int payPeriod =
+                Integer.parseInt(
+                        PayrollData.PAY_PERIODS[
+                                selectedIndex
+                                ][0]
+                );
+
+
+        String startDate =
+                PayrollData.PAY_PERIODS[
+                        selectedIndex
+                        ][1];
+
+
+        String endDate =
+                PayrollData.PAY_PERIODS[
+                        selectedIndex
+                        ][2];
+
+
+        // ==========================================
+        // GENERATE CHECK
+        // ==========================================
+
+        PayrollCheckGenerator.generateCheck(
+
+                // Employee information
+                employee.name,
+                payDate,
+                payPeriod,
+                startDate,
+                endDate,
+                employee.address,
+                employee.city,
+                employee.zip,
+
+                // Current earnings
+                currentTotals.get("Hours"),
+                currentTotals.get("OT Hours"),
+                currentTotals.get("Regular Pay"),
+                currentTotals.get("OT Pay"),
+
+                // YTD earnings
+                ytdTotals.get("Regular Pay"),
+                ytdTotals.get("OT Pay"),
+
+                // Current deductions
+                currentTotals.get("Federal"),
+                currentTotals.get("Social Security"),
+                currentTotals.get("Medicare"),
+                currentTotals.get("SLG Tax"),
+                currentTotals.get("Total Deductions"),
+                currentTotals.get("Net Pay"),
+
+                // YTD deductions
+                ytdTotals.get("Federal"),
+                ytdTotals.get("Social Security"),
+                ytdTotals.get("Medicare"),
+                ytdTotals.get("SLG Tax"),
+                ytdTotals.get("Total Deductions"),
+                ytdTotals.get("Net Pay"),
+
+                // Current Bonus
+                currentTotals.get("Bonus"),
+                ytdTotals.get("Bonus")
+        );
+
+
+        JOptionPane.showMessageDialog(
+                frame,
+                "Check generated successfully!\n\n" +
+                        "File: GeneratedCheck.png"
+        );
+    }
+
 
     // =========================
     // SWITCH EMPLOYEE
     // =========================
 
     private void switchEmployee(
-            int newEmployeeIndex) {
+            int newEmployeeIndex
+    ) {
 
         saveCurrentEmployee();
+
 
         employeeManager.setCurrentEmployeeIndex(
                 newEmployeeIndex
         );
 
+
         loadCurrentEmployee();
     }
+
 
     // =========================
     // LOAD CURRENT EMPLOYEE
@@ -556,16 +992,21 @@ public class PayrollGUI {
     private void loadCurrentEmployee() {
 
         Employee employee =
-                employeeManager.getCurrentEmployee();
+                employeeManager
+                        .getCurrentEmployee();
+
 
         employeeNameLabel.setText(
-                "Current Employee: "
+                "Current Employee: " +
+                        employee.name
         );
+
 
         tableManager.loadEmployee(
                 employee
         );
     }
+
 
     // =========================
     // SAVE CURRENT EMPLOYEE
@@ -574,9 +1015,11 @@ public class PayrollGUI {
     private void saveCurrentEmployee() {
 
         tableManager.saveEmployee(
-                employeeManager.getCurrentEmployee()
+                employeeManager
+                        .getCurrentEmployee()
         );
     }
+
 
     // =========================
     // UPDATE SELECTOR
@@ -586,8 +1029,11 @@ public class PayrollGUI {
 
         employeeSelector.removeAllItems();
 
-        for (Employee employee :
-                employeeManager.getEmployees()) {
+
+        for (
+                Employee employee :
+                employeeManager.getEmployees()
+        ) {
 
             employeeSelector.addItem(
                     employee.name

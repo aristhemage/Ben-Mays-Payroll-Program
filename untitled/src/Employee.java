@@ -1,5 +1,7 @@
 public class Employee {
 
+    public String zip;
+    public String city;
     String name;
     int num_rows = 26;
 
@@ -14,12 +16,16 @@ public class Employee {
 
     String[] extra = new String[num_rows];
     String fed_rate;
+    String address;
 
     public Employee(String name) {
 
         this.name = name;
 
         fed_rate = "0";
+        address = "Address Not Given";
+        city = "City Not Given";
+        zip = "Zip not given";
 
         // Make the array blank by default on all categories
         for (int i = 0; i < num_rows; i++) {
