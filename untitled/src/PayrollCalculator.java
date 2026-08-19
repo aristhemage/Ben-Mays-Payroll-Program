@@ -74,10 +74,99 @@ public class PayrollCalculator {
     // =========================
     // TOTAL FEDERAL
     // =========================
+
     public double calculateFedRate(
             double gross,
             String fed_rate
-    ){
-        return gross*parseDouble(fed_rate)/100;
+    ) {
+
+        return gross * parseDouble(fed_rate) / 100;
+    }
+
+    // =========================
+    // TOTAL SOCIAL SECURITY
+    // =========================
+
+    public double calculateSocialSecurity(
+            double gross
+    ) {
+
+        return gross * 0.062;
+    }
+
+    // =========================
+    // TOTAL MEDICARE
+    // =========================
+
+    public double calculateMedicare(
+            double gross
+    ) {
+
+        return gross * 0.0145;
+    }
+
+    // =========================
+    // TOTAL MARYLAND TAX
+    // =========================
+
+    public double calculateMaryland(
+            double gross
+    ) {
+
+        double result = 0;
+
+        double[] thresholds = {
+                0, 1000, 2000, 3000, 100000,
+                125000, 150000, 250000, 500000, 1000000
+        };
+
+        double[] rates = {
+                0.02, 0.01, 0.01, 0.0075, 0.0025,
+                0.0025, 0.0025, 0.0025, 0.005, 0.0025
+        };
+
+        for (int i = 0; i < thresholds.length; i++) {
+
+            if (gross > thresholds[i]) {
+
+                result +=
+                        (gross - thresholds[i])
+                                * rates[i];
+            }
+        }
+
+        return result;
+    }
+
+    // =========================
+    // TOTAL BALTIMORE
+    // =========================
+
+    public double calculateBaltimore(
+            double gross
+    ) {
+
+        return gross * 0.032;
+    }
+
+    // =========================
+    // TOTAL NET
+    // =========================
+
+    public double calculateNet(
+            double gross,
+            double fed,
+            double soc,
+            double med,
+            double md,
+            double bc
+    ) {
+
+        return gross
+                - fed
+                - soc
+                - med
+                - md
+                - bc;
     }
 }

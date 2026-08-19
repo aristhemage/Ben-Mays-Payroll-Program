@@ -10,6 +10,7 @@ public class PayrollGUI {
     private final JFrame frame;
     private final JComboBox<String> employeeSelector;
     private final JLabel employeeNameLabel;
+
     private final PayrollTableManager tableManager;
 
     private boolean changingEmployee = false;
@@ -32,63 +33,137 @@ public class PayrollGUI {
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setLayout(new BorderLayout());
 
+        // =========================
+        // MANAGERS
+        // =========================
 
         tableManager = new PayrollTableManager(frame);
+
+        PayrollTotalsManager totalsManager = new PayrollTotalsManager(
+                frame,
+                employeeManager,
+                tableManager
+        );
 
         // =========================
         // TOP PANEL
         // =========================
 
-        JPanel topPanel = new JPanel(new BorderLayout());
+        JPanel topPanel =
+                new JPanel(new BorderLayout());
 
-        // Employee controls go on the left
-        JPanel employeeControlsPanel = new JPanel();
+        JPanel employeeControlsPanel =
+                new JPanel();
 
-        employeeNameLabel = new JLabel("Current Employee:");
-        employeeSelector = new JComboBox<>();
+        employeeNameLabel =
+                new JLabel("Current Employee:");
 
-        JButton previousButton = new JButton("< Previous");
-        JButton nextButton = new JButton("Next >");
-        JButton addEmployeeButton = new JButton("Add Employee");
-        JButton removeEmployeeButton = new JButton("Remove Employee");
+        employeeSelector =
+                new JComboBox<>();
 
-        employeeControlsPanel.add(employeeNameLabel);
-        employeeControlsPanel.add(employeeSelector);
-        employeeControlsPanel.add(previousButton);
-        employeeControlsPanel.add(nextButton);
-        employeeControlsPanel.add(addEmployeeButton);
-        employeeControlsPanel.add(removeEmployeeButton);
+        JButton previousButton =
+                new JButton("< Previous");
 
-        topPanel.add(employeeControlsPanel,BorderLayout.WEST);
+        JButton nextButton =
+                new JButton("Next >");
 
-        // Fed Rate goes on the far right
-        topPanel.add(tableManager.getFedRatePanel(), BorderLayout.EAST);
+        JButton addEmployeeButton =
+                new JButton("Add Employee");
 
-        frame.add(topPanel, BorderLayout.NORTH);
+        JButton removeEmployeeButton =
+                new JButton("Remove Employee");
+
+        employeeControlsPanel.add(
+                employeeNameLabel
+        );
+
+        employeeControlsPanel.add(
+                employeeSelector
+        );
+
+        employeeControlsPanel.add(
+                previousButton
+        );
+
+        employeeControlsPanel.add(
+                nextButton
+        );
+
+        employeeControlsPanel.add(
+                addEmployeeButton
+        );
+
+        employeeControlsPanel.add(
+                removeEmployeeButton
+        );
+
+        topPanel.add(
+                employeeControlsPanel,
+                BorderLayout.WEST
+        );
+
+        topPanel.add(
+                tableManager.getFedRatePanel(),
+                BorderLayout.EAST
+        );
+
+        frame.add(
+                topPanel,
+                BorderLayout.NORTH
+        );
 
         // =========================
         // TABLE
         // =========================
 
-        // Let it scroll
-        JScrollPane scrollPane = new JScrollPane(tableManager.getTable());
-        // Place table in the middle of the screen
-        frame.add(scrollPane, BorderLayout.CENTER);
+        JScrollPane scrollPane =
+                new JScrollPane(
+                        tableManager.getTable()
+                );
+
+        frame.add(
+                scrollPane,
+                BorderLayout.CENTER
+        );
 
         // =========================
         // BOTTOM PANEL
         // =========================
 
-        JPanel bottomPanel = new JPanel();
+        JPanel bottomPanel =
+                new JPanel();
 
-        JButton changeHourlyRateButton = new JButton("Change Hourly Rate");
+        JButton changeHourlyRateButton =
+                new JButton(
+                        "Mass Change Hourly Rate"
+                );
 
-        JButton changeOTRateButton = new JButton("Change OT Rate");
+        JButton changeOTRateButton =
+                new JButton(
+                        "Mass Change OT Rate"
+                );
 
-        bottomPanel.add(changeHourlyRateButton);
-        bottomPanel.add(changeOTRateButton);
+        JButton viewTotalsButton =
+                new JButton(
+                        "View Totals"
+                );
 
-        frame.add(bottomPanel, BorderLayout.SOUTH);
+        bottomPanel.add(
+                changeHourlyRateButton
+        );
+
+        bottomPanel.add(
+                changeOTRateButton
+        );
+
+        bottomPanel.add(
+                viewTotalsButton
+        );
+
+        frame.add(
+                bottomPanel,
+                BorderLayout.SOUTH
+        );
 
         // =========================
         // BUTTON EVENTS
@@ -96,23 +171,44 @@ public class PayrollGUI {
 
         setupEmployeeSelector();
 
-        setupPreviousButton(previousButton);
-        setupNextButton(nextButton);
+        setupPreviousButton(
+                previousButton
+        );
 
-        setupAddEmployeeButton(addEmployeeButton);
-        setupRemoveEmployeeButton(removeEmployeeButton);
+        setupNextButton(
+                nextButton
+        );
 
-        setupHourlyRateButton(changeHourlyRateButton);
-        setupOTRateButton(changeOTRateButton);
+        setupAddEmployeeButton(
+                addEmployeeButton
+        );
+
+        setupRemoveEmployeeButton(
+                removeEmployeeButton
+        );
+
+        setupHourlyRateButton(
+                changeHourlyRateButton
+        );
+
+        setupOTRateButton(
+                changeOTRateButton
+        );
+
+        totalsManager.setupViewTotalsButton(
+                viewTotalsButton
+        );
 
         // =========================
         // INITIAL SETUP
         // =========================
 
         updateEmployeeSelector();
+
         loadCurrentEmployee();
 
         frame.setLocationRelativeTo(null);
+
         frame.setVisible(true);
     }
 
@@ -135,7 +231,9 @@ public class PayrollGUI {
                     selectedIndex !=
                             employeeManager.getCurrentEmployeeIndex()) {
 
-                switchEmployee(selectedIndex);
+                switchEmployee(
+                        selectedIndex
+                );
             }
         });
     }
@@ -144,12 +242,14 @@ public class PayrollGUI {
     // PREVIOUS BUTTON
     // =========================
 
-    private void setupPreviousButton(JButton button) {
+    private void setupPreviousButton(
+            JButton button) {
 
         button.addActionListener(e -> {
 
             int current =
-                    employeeManager.getCurrentEmployeeIndex();
+                    employeeManager
+                            .getCurrentEmployeeIndex();
 
             if (current > 0) {
 
@@ -164,12 +264,14 @@ public class PayrollGUI {
     // NEXT BUTTON
     // =========================
 
-    private void setupNextButton(JButton button) {
+    private void setupNextButton(
+            JButton button) {
 
         button.addActionListener(e -> {
 
             int current =
-                    employeeManager.getCurrentEmployeeIndex();
+                    employeeManager
+                            .getCurrentEmployeeIndex();
 
             if (current <
                     employeeManager.getEmployeeCount() - 1) {
@@ -185,14 +287,16 @@ public class PayrollGUI {
     // ADD EMPLOYEE
     // =========================
 
-    private void setupAddEmployeeButton(JButton button) {
+    private void setupAddEmployeeButton(
+            JButton button) {
 
         button.addActionListener(e -> {
 
-            String name = JOptionPane.showInputDialog(
-                    frame,
-                    "Enter employee name:"
-            );
+            String name =
+                    JOptionPane.showInputDialog(
+                            frame,
+                            "Enter employee name:"
+                    );
 
             if (name == null ||
                     name.trim().isEmpty()) {
@@ -203,7 +307,9 @@ public class PayrollGUI {
             saveCurrentEmployee();
 
             employeeManager.addEmployee(
-                    new Employee(name.trim())
+                    new Employee(
+                            name.trim()
+                    )
             );
 
             employeeManager.setCurrentEmployeeIndex(
@@ -228,7 +334,8 @@ public class PayrollGUI {
     // REMOVE EMPLOYEE
     // =========================
 
-    private void setupRemoveEmployeeButton(JButton button) {
+    private void setupRemoveEmployeeButton(
+            JButton button) {
 
         button.addActionListener(e -> {
 
@@ -247,15 +354,19 @@ public class PayrollGUI {
                             .getCurrentEmployee()
                             .name;
 
-            int choice = JOptionPane.showConfirmDialog(
-                    frame,
-                    "Remove " + employeeName +
-                            "? (THIS ACTION CAN NOT BE UNDONE!)",
-                    "Remove Employee",
-                    JOptionPane.YES_NO_OPTION
-            );
+            int choice =
+                    JOptionPane.showConfirmDialog(
+                            frame,
+                            "Remove " +
+                                    employeeName +
+                                    "? (THIS ACTION CAN NOT BE UNDONE!)",
+                            "Remove Employee",
+                            JOptionPane.YES_NO_OPTION
+                    );
 
-            if (choice != JOptionPane.YES_OPTION) {
+            if (choice !=
+                    JOptionPane.YES_OPTION) {
+
                 return;
             }
 
@@ -268,7 +379,8 @@ public class PayrollGUI {
             updateEmployeeSelector();
 
             employeeSelector.setSelectedIndex(
-                    employeeManager.getCurrentEmployeeIndex()
+                    employeeManager
+                            .getCurrentEmployeeIndex()
             );
 
             changingEmployee = false;
@@ -281,7 +393,8 @@ public class PayrollGUI {
     // HOURLY RATE BUTTON
     // =========================
 
-    private void setupHourlyRateButton(JButton button) {
+    private void setupHourlyRateButton(
+            JButton button) {
 
         button.addActionListener(e -> {
 
@@ -305,7 +418,7 @@ public class PayrollGUI {
             String newRate =
                     JOptionPane.showInputDialog(
                             frame,
-                            "Enter the new hourly rate:"
+                            "Enter the new hourly rate for the rest of the rows:"
                     );
 
             if (newRate == null ||
@@ -352,7 +465,8 @@ public class PayrollGUI {
     // OT RATE BUTTON
     // =========================
 
-    private void setupOTRateButton(JButton button) {
+    private void setupOTRateButton(
+            JButton button) {
 
         button.addActionListener(e -> {
 
@@ -376,7 +490,7 @@ public class PayrollGUI {
             String newRate =
                     JOptionPane.showInputDialog(
                             frame,
-                            "Enter the new OT rate:"
+                            "Enter the new OT rate for the rest of the rows:"
                     );
 
             if (newRate == null ||
@@ -423,7 +537,8 @@ public class PayrollGUI {
     // SWITCH EMPLOYEE
     // =========================
 
-    private void switchEmployee(int newEmployeeIndex) {
+    private void switchEmployee(
+            int newEmployeeIndex) {
 
         saveCurrentEmployee();
 
@@ -447,7 +562,9 @@ public class PayrollGUI {
                 "Current Employee: "
         );
 
-        tableManager.loadEmployee(employee);
+        tableManager.loadEmployee(
+                employee
+        );
     }
 
     // =========================

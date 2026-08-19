@@ -2,6 +2,8 @@ import javax.swing.*;
 import javax.swing.event.CellEditorListener;
 import javax.swing.event.ChangeEvent;
 import javax.swing.table.DefaultTableModel;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 public class PayrollTableManager {
 
@@ -58,13 +60,11 @@ public class PayrollTableManager {
 
         fedRatePanel.add(fedRateField);
 
-        // Recalculate when Enter is pressed
         fedRateField.addActionListener(e -> {
             validateFedRate();
             calculateAllRows();
         });
 
-        // Recalculate when the field loses focus
         fedRateField.addFocusListener(
                 new java.awt.event.FocusAdapter() {
 
@@ -131,7 +131,7 @@ public class PayrollTableManager {
     }
 
     // =========================
-    // GET TABLE
+    // GETTERS
     // =========================
 
     public JTable getTable() {
@@ -145,10 +145,6 @@ public class PayrollTableManager {
     public JTextField getFedRateField() {
         return fedRateField;
     }
-
-    // =========================
-    // GET TABLE MODEL
-    // =========================
 
     public DefaultTableModel getTableModel() {
         return tableModel;
@@ -201,6 +197,7 @@ public class PayrollTableManager {
         String value = getValue(row, column).trim();
 
         if (value.isEmpty()) {
+
             calculateRow(row);
             return;
         }
@@ -330,6 +327,34 @@ public class PayrollTableManager {
                         fedRateField.getText()
                 );
 
+        double socialSecurity =
+                calculator.calculateSocialSecurity(totalGross);
+
+        double medicare =
+                calculator.calculateMedicare(totalGross);
+
+        double maryland =
+                calculator.calculateMaryland(totalGross);
+
+        double baltimore =
+                calculator.calculateBaltimore(totalGross);
+
+        double net =
+                calculator.calculateNet(
+                        totalGross,
+                        federal,
+                        socialSecurity,
+                        medicare,
+                        maryland,
+                        baltimore
+                );
+
+        double slg =
+                maryland + baltimore;
+
+        double deductions =
+                totalGross - net;
+
         tableModel.setValueAt(
                 String.format("%.2f", regularPay),
                 row,
@@ -352,6 +377,48 @@ public class PayrollTableManager {
                 String.format("%.2f", federal),
                 row,
                 FEDERAL
+        );
+
+        tableModel.setValueAt(
+                String.format("%.2f", socialSecurity),
+                row,
+                SOCIAL_SECURITY
+        );
+
+        tableModel.setValueAt(
+                String.format("%.2f", medicare),
+                row,
+                MEDICARE
+        );
+
+        tableModel.setValueAt(
+                String.format("%.2f", maryland),
+                row,
+                MD_TAX
+        );
+
+        tableModel.setValueAt(
+                String.format("%.2f", baltimore),
+                row,
+                BC_TAX
+        );
+
+        tableModel.setValueAt(
+                String.format("%.2f", net),
+                row,
+                NET_PAY
+        );
+
+        tableModel.setValueAt(
+                String.format("%.2f", slg),
+                row,
+                SLG_TAX
+        );
+
+        tableModel.setValueAt(
+                String.format("%.2f", deductions),
+                row,
+                TOTAL_DEDUCTIONS
         );
     }
 
@@ -521,6 +588,257 @@ public class PayrollTableManager {
             calculateRow(row);
 
         } catch (NumberFormatException ignored) {
+        }
+    }
+
+    // =========================
+    // CALCULATE TOTALS FOR ALL EMPLOYEES
+    // =========================
+
+    public Map<String, Double> calculateTotals(
+            EmployeeManager employeeManager,
+            boolean[] includedPayPeriods) {
+
+        Map<String, Double> totals =
+                createEmptyTotals();
+
+        for (Employee employee :
+                employeeManager.getEmployees()) {
+
+            for (int i = 0;
+                 i < PayrollData.PAY_PERIODS.length;
+                 i++) {
+
+                if (!includedPayPeriods[i]) {
+                    continue;
+                }
+
+                double hours =
+                        getNumber(employee.hours[i]);
+
+                double otHours =
+                        getNumber(employee.ot_hours[i]);
+
+                double hourlyRate =
+                        getNumber(employee.hourly_rates[i]);
+
+                double otRate =
+                        getNumber(employee.ot_rates[i]);
+
+                double regularPay =
+                        calculator.calculateRegularPay(
+                                employee.hours[i],
+                                employee.hourly_rates[i]
+                        );
+
+                double otPay =
+                        calculator.calculateOTPay(
+                                employee.ot_hours[i],
+                                employee.ot_rates[i]
+                        );
+
+                double extra =
+                        calculator.calculateExtraPay(
+                                employee.extra[i]
+                        );
+
+                double totalGross =
+                        regularPay + otPay + extra;
+
+                double federal =
+                        calculator.calculateFedRate(
+                                totalGross,
+                                employee.fed_rate
+                        );
+
+                double socialSecurity =
+                        calculator.calculateSocialSecurity(
+                                totalGross
+                        );
+
+                double medicare =
+                        calculator.calculateMedicare(
+                                totalGross
+                        );
+
+                double maryland =
+                        calculator.calculateMaryland(
+                                totalGross
+                        );
+
+                double baltimore =
+                        calculator.calculateBaltimore(
+                                totalGross
+                        );
+
+                double slg =
+                        maryland + baltimore;
+
+                double net =
+                        calculator.calculateNet(
+                                totalGross,
+                                federal,
+                                socialSecurity,
+                                medicare,
+                                maryland,
+                                baltimore
+                        );
+
+                double deductions =
+                        totalGross - net;
+
+                addToTotal(
+                        totals,
+                        "Hours",
+                        hours
+                );
+
+                addToTotal(
+                        totals,
+                        "OT Hours",
+                        otHours
+                );
+
+                addToTotal(
+                        totals,
+                        "Regular Pay",
+                        regularPay
+                );
+
+                addToTotal(
+                        totals,
+                        "OT Pay",
+                        otPay
+                );
+
+                addToTotal(
+                        totals,
+                        "Extra",
+                        extra
+                );
+
+                addToTotal(
+                        totals,
+                        "Total Gross",
+                        totalGross
+                );
+
+                addToTotal(
+                        totals,
+                        "Federal",
+                        federal
+                );
+
+                addToTotal(
+                        totals,
+                        "Social Security",
+                        socialSecurity
+                );
+
+                addToTotal(
+                        totals,
+                        "Medicare",
+                        medicare
+                );
+
+                addToTotal(
+                        totals,
+                        "MD Tax",
+                        maryland
+                );
+
+                addToTotal(
+                        totals,
+                        "BC Tax",
+                        baltimore
+                );
+
+                addToTotal(
+                        totals,
+                        "SLG Tax",
+                        slg
+                );
+
+                addToTotal(
+                        totals,
+                        "Total Deductions",
+                        deductions
+                );
+
+                addToTotal(
+                        totals,
+                        "Net Pay",
+                        net
+                );
+            }
+        }
+
+        return totals;
+    }
+
+    // =========================
+    // CREATE EMPTY TOTALS
+    // =========================
+
+    private Map<String, Double> createEmptyTotals() {
+
+        Map<String, Double> totals =
+                new LinkedHashMap<>();
+
+        totals.put("Hours", 0.0);
+        totals.put("OT Hours", 0.0);
+        totals.put("Regular Pay", 0.0);
+        totals.put("OT Pay", 0.0);
+        totals.put("Extra", 0.0);
+        totals.put("Total Gross", 0.0);
+        totals.put("Federal", 0.0);
+        totals.put("Social Security", 0.0);
+        totals.put("Medicare", 0.0);
+        totals.put("MD Tax", 0.0);
+        totals.put("BC Tax", 0.0);
+        totals.put("SLG Tax", 0.0);
+        totals.put("Total Deductions", 0.0);
+        totals.put("Net Pay", 0.0);
+
+        return totals;
+    }
+
+    // =========================
+    // ADD TO TOTAL
+    // =========================
+
+    private void addToTotal(
+            Map<String, Double> totals,
+            String name,
+            double amount) {
+
+        totals.put(
+                name,
+                totals.get(name) + amount
+        );
+    }
+
+    // =========================
+    // GET NUMBER
+    // =========================
+
+    private double getNumber(String value) {
+
+        if (value == null ||
+                value.trim().isEmpty()) {
+
+            return 0;
+        }
+
+        try {
+
+            return Double.parseDouble(
+                    value.trim()
+            );
+
+        } catch (NumberFormatException error) {
+
+            return 0;
         }
     }
 
