@@ -12,10 +12,11 @@ public class Main {
             if(employee_manager == null) {
                 employee_manager = new EmployeeManager();
 
-                employee_manager.addEmployee(new Employee("Test Employee (Remove when done)"));
+                employee_manager.addEmployee(new Employee("Test Employee (Remove when done)", "Dummy Address", "Dummy City", "Dummy Zip #"));
             }
 
             new PayrollGUI(employee_manager);
         });
+
     }
 }

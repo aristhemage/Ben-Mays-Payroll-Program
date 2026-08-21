@@ -226,6 +226,11 @@ public class PayrollGUI {
                         "Generate Check"
                 );
 
+        JButton makeAddressButton =
+                new JButton(
+                        "Add/Change Address"
+                );
+
 
         bottomPanel.add(
                 changeHourlyRateButton
@@ -241,6 +246,10 @@ public class PayrollGUI {
 
         bottomPanel.add(
                 makeCheckButton
+        );
+
+        bottomPanel.add(
+                makeAddressButton
         );
 
 
@@ -288,6 +297,10 @@ public class PayrollGUI {
 
         setupMakeCheckButton(
                 makeCheckButton
+        );
+
+        setupMakeAddressButton(
+                makeAddressButton
         );
 
 
@@ -416,30 +429,58 @@ public class PayrollGUI {
 
         button.addActionListener(
                 e -> {
-
-                    String name =
-                            JOptionPane.showInputDialog(
-                                    frame,
-                                    "Enter employee name:"
-                            );
-
-
-                    if (
-                            name == null ||
-                                    name.trim().isEmpty()
-                    ) {
-
+                    // Get Name
+                    String name = JOptionPane.showInputDialog(frame, "Enter employee name:");
+                    if (name == null || name.trim().isEmpty()) {
                         return;
                     }
 
+                    // Get Address
+                    String address = JOptionPane.showInputDialog(frame, "Enter street address:");
+                    if (address == null || address.trim().isEmpty()) {
+                        return;
+                    }
 
+                    // Get City
+                    String city = JOptionPane.showInputDialog(frame, "Enter city:");
+                    if (city == null || city.trim().isEmpty()) {
+                        return;
+                    }
+
+                    // Get Zip Code
+                    String zipCode = JOptionPane.showInputDialog(frame, "Enter ZIP code:");
+                    if (zipCode == null || zipCode.trim().isEmpty()) {
+                        return;
+                    }
+
+                    // Confirm Information
+                    String message =
+                            "Is this information correct?\n\n" +
+                                    "Name: " + name.trim() + "\n" +
+                                    "Address: " + address.trim() + "\n" +
+                                    "City: " + city.trim() + "\n" +
+                                    "ZIP Code: " + zipCode.trim();
+
+
+                    int result = JOptionPane.showConfirmDialog(
+                            frame,
+                            message,
+                            "Confirm Employee Information",
+                            JOptionPane.YES_NO_OPTION,
+                            JOptionPane.QUESTION_MESSAGE
+                    );
+
+                    // User clicked No
+                    if (result != JOptionPane.YES_OPTION) {
+                        return;
+                    }
                     saveCurrentEmployee();
-
-
-
                     employeeManager.addEmployee(
                             new Employee(
-                                    name.trim()
+                                    name.trim(),
+                                    address.trim(),
+                                    city.trim(),
+                                    zipCode.trim()
                             )
                     );
                     FileData.save(employeeManager);
@@ -553,6 +594,67 @@ public class PayrollGUI {
         );
     }
 
+    // =========================
+    // CHANGE EMPLOYEE ADDRESS BUTTON
+    // =========================
+    private void setupMakeAddressButton(
+            JButton makeAddressButton
+    ) {
+
+        makeAddressButton.addActionListener(
+                e -> {
+
+                    Employee employee =
+                            employeeManager.getCurrentEmployee();
+
+
+                    // Get Address
+                    String address = JOptionPane.showInputDialog(
+                            frame,
+                            "Enter street address:",
+                            employee.getAddress()
+                    );
+
+                    if (address == null || address.trim().isEmpty()) {
+                        return;
+                    }
+
+
+                    // Get City
+                    String city = JOptionPane.showInputDialog(
+                            frame,
+                            "Enter city:",
+                            employee.getCity()
+                    );
+
+                    if (city == null || city.trim().isEmpty()) {
+                        return;
+                    }
+
+
+                    // Get ZIP Code
+                    String zipCode = JOptionPane.showInputDialog(
+                            frame,
+                            "Enter ZIP code:",
+                            employee.getZipCode()
+                    );
+
+                    if (zipCode == null || zipCode.trim().isEmpty()) {
+                        return;
+                    }
+
+
+                    // Save Information
+                    employee.setAddress(address.trim());
+                    employee.setCity(city.trim());
+                    employee.setZipCode(zipCode.trim());
+
+
+                    // Save to File
+                    FileData.save(employeeManager);
+                }
+        );
+    }
 
     // =========================
     // HOURLY RATE BUTTON
