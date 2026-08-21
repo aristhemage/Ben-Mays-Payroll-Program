@@ -7,9 +7,13 @@ public class Main {
 
         SwingUtilities.invokeLater(() -> {
 
-            EmployeeManager employee_manager = new EmployeeManager();
+            EmployeeManager employee_manager = FileData.load();
 
-            employee_manager.addEmployee(new Employee("Test Employee (Remove when done)"));
+            if(employee_manager == null) {
+                employee_manager = new EmployeeManager();
+
+                employee_manager.addEmployee(new Employee("Test Employee (Remove when done)"));
+            }
 
             new PayrollGUI(employee_manager);
         });

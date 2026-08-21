@@ -1,7 +1,9 @@
+import java.io.Serializable;
 import java.util.ArrayList;
 
-public class EmployeeManager {
+public class EmployeeManager implements Serializable {
 
+    private static final long serialVersionUID = 1L;
     private final ArrayList<Employee> employees = new ArrayList<>();
 
     private int current_employee_index = 0;
@@ -72,4 +74,6 @@ public class EmployeeManager {
     public int getEmployeeCount() {
         return employees.size();
     }
+
+
 }

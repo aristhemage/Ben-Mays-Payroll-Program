@@ -1,6 +1,8 @@
 import javax.swing.*;
 import java.awt.*;
 import java.util.Map;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 
 public class PayrollGUI {
 
@@ -45,8 +47,9 @@ public class PayrollGUI {
         );
 
         frame.setDefaultCloseOperation(
-                JFrame.EXIT_ON_CLOSE
+                JFrame.DO_NOTHING_ON_CLOSE
         );
+
 
         frame.setLayout(
                 new BorderLayout()
@@ -62,6 +65,20 @@ public class PayrollGUI {
                         frame
                 );
 
+        // Save upon closing
+        frame.addWindowListener(
+                new WindowAdapter() {
+                    @Override
+                    public void windowClosing(WindowEvent event){
+                        //Save any unsaved table edits
+                        tableManager.stopEditing();
+                        saveCurrentEmployee();
+
+                        frame.dispose();
+                        System.exit(0);
+                    }
+                }
+        );
 
         PayrollTotalsManager totalsManager =
                 new PayrollTotalsManager(
@@ -419,11 +436,13 @@ public class PayrollGUI {
                     saveCurrentEmployee();
 
 
+
                     employeeManager.addEmployee(
                             new Employee(
                                     name.trim()
                             )
                     );
+                    FileData.save(employeeManager);
 
 
                     employeeManager.setCurrentEmployeeIndex(
@@ -997,8 +1016,8 @@ public class PayrollGUI {
 
 
         employeeNameLabel.setText(
-                "Current Employee: " +
-                        employee.name
+                "Current Employee: "
+
         );
 
 
@@ -1018,6 +1037,8 @@ public class PayrollGUI {
                 employeeManager
                         .getCurrentEmployee()
         );
+        FileData.save(employeeManager);
+
     }
 
 
