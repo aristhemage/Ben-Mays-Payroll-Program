@@ -135,6 +135,11 @@ public class PayrollGUI {
                         "Remove Employee"
                 );
 
+        JButton viewSingleTotalsButton =
+                new JButton(
+                        "View Individual Employee Totals"
+                );
+
 
         employeeControlsPanel.add(
                 employeeNameLabel
@@ -159,6 +164,11 @@ public class PayrollGUI {
         employeeControlsPanel.add(
                 removeEmployeeButton
         );
+
+        employeeControlsPanel.add(
+                viewSingleTotalsButton
+        );
+
 
 
         topPanel.add(
@@ -217,7 +227,7 @@ public class PayrollGUI {
 
         JButton viewTotalsButton =
                 new JButton(
-                        "View Totals"
+                        "View All Employee Totals"
                 );
 
 
@@ -293,7 +303,9 @@ public class PayrollGUI {
         totalsManager.setupViewTotalsButton(
                 viewTotalsButton
         );
-
+        totalsManager.setupViewIndividualTotalsButton(
+                viewSingleTotalsButton
+        );
 
         setupMakeCheckButton(
                 makeCheckButton
@@ -593,6 +605,9 @@ public class PayrollGUI {
                 }
         );
     }
+    // =========================
+    // VIEW INDIVIDUAL STATS BUTTON
+    // =========================
 
     // =========================
     // CHANGE EMPLOYEE ADDRESS BUTTON

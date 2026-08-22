@@ -799,12 +799,7 @@ public class PayrollTableManager {
     // =========================
     // CALCULATE TOTALS
     // =========================
-    //
-    // This keeps your existing
-    // "View Totals" behavior.
-    //
-    // It totals ALL employees.
-    // =========================
+
 
     public Map<String, Double> calculateTotals(
             EmployeeManager employeeManager,
@@ -834,9 +829,6 @@ public class PayrollTableManager {
 
     // =========================
     // CALCULATE ONE EMPLOYEE
-    // =========================
-    //
-    // Used by Generate Check.
     // =========================
 
     public Map<String, Double> calculateEmployeeTotals(
