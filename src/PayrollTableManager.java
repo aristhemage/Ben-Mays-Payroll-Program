@@ -34,8 +34,7 @@ public class PayrollTableManager {
     private final JPanel fedRatePanel;
     private final JTextField fedRateField;
 
-    private final PayrollCalculator calculator =
-            new PayrollCalculator();
+    private final PayrollCalculator calculator = new PayrollCalculator();
 
 
     // =========================
@@ -51,46 +50,30 @@ public class PayrollTableManager {
         // FED RATE
         // =========================
 
-        fedRateField =
-                new JTextField(8);
-
+        fedRateField = new JTextField(8);
         fedRateField.setText("0");
 
-        fedRatePanel =
-                new JPanel();
+        fedRatePanel = new JPanel();
 
         fedRatePanel.setBorder(
-                BorderFactory.createTitledBorder(
-                        "Fed Rate %"
-                )
+                BorderFactory.createTitledBorder("Fed Rate %")
         );
 
-        fedRatePanel.add(
-                fedRateField
-        );
+        fedRatePanel.add(fedRateField);
 
+        fedRateField.addActionListener(e -> {
+            validateFedRate();
+            calculateAllRows();
+        });
 
-        fedRateField.addActionListener(
-                e -> {
+        fedRateField.addFocusListener(new java.awt.event.FocusAdapter() {
 
-                    validateFedRate();
-                    calculateAllRows();
-                }
-        );
-
-
-        fedRateField.addFocusListener(
-                new java.awt.event.FocusAdapter() {
-
-                    @Override
-                    public void focusLost(
-                            java.awt.event.FocusEvent e) {
-
-                        validateFedRate();
-                        calculateAllRows();
-                    }
-                }
-        );
+            @Override
+            public void focusLost(java.awt.event.FocusEvent e) {
+                validateFedRate();
+                calculateAllRows();
+            }
+        });
 
 
         // =========================
@@ -129,28 +112,15 @@ public class PayrollTableManager {
         // TABLE MODEL
         // =========================
 
-        tableModel =
-                new DefaultTableModel(
-                        columnNames,
-                        0
-                ) {
+        tableModel = new DefaultTableModel(columnNames, 0) {
 
-                    @Override
-                    public boolean isCellEditable(
-                            int row,
-                            int column) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return column >= HOURS && column <= EXTRA;
+            }
+        };
 
-                        return column >= HOURS &&
-                                column <= EXTRA;
-                    }
-                };
-
-
-        table =
-                new JTable(
-                        tableModel
-                );
-
+        table = new JTable(tableModel);
 
         setupValidation();
     }
@@ -184,22 +154,17 @@ public class PayrollTableManager {
     private void setupValidation() {
 
         table.getDefaultEditor(Object.class)
-                .addCellEditorListener(
-                        new CellEditorListener() {
+                .addCellEditorListener(new CellEditorListener() {
 
-                            @Override
-                            public void editingStopped(
-                                    ChangeEvent e) {
+                    @Override
+                    public void editingStopped(ChangeEvent e) {
+                        validateCell();
+                    }
 
-                                validateCell();
-                            }
-
-                            @Override
-                            public void editingCanceled(
-                                    ChangeEvent e) {
-                            }
-                        }
-                );
+                    @Override
+                    public void editingCanceled(ChangeEvent e) {
+                    }
+                });
     }
 
 
@@ -209,48 +174,27 @@ public class PayrollTableManager {
 
     private void validateCell() {
 
-        int row =
-                table.getSelectedRow();
+        int row = table.getSelectedRow();
+        int column = table.getSelectedColumn();
 
-        int column =
-                table.getSelectedColumn();
-
-
-        if (row == -1 ||
-                column == -1) {
-
+        if (row == -1 || column == -1) {
             return;
         }
 
-
-        if (column < HOURS ||
-                column > EXTRA) {
-
+        if (column < HOURS || column > EXTRA) {
             return;
         }
 
-
-        String value =
-                getValue(
-                        row,
-                        column
-                ).trim();
-
+        String value = getValue(row, column).trim();
 
         if (value.isEmpty()) {
-
             calculateRow(row);
             return;
         }
 
-
         try {
 
-            double number =
-                    Double.parseDouble(
-                            value
-                    );
-
+            double number = Double.parseDouble(value);
 
             if (number < 0) {
 
@@ -259,12 +203,7 @@ public class PayrollTableManager {
                         "Please enter a number greater than or equal to 0."
                 );
 
-
-                tableModel.setValueAt(
-                        "",
-                        row,
-                        column
-                );
+                tableModel.setValueAt("", row, column);
             }
 
         } catch (NumberFormatException error) {
@@ -274,14 +213,8 @@ public class PayrollTableManager {
                     "Invalid input.\nPlease enter a valid number."
             );
 
-
-            tableModel.setValueAt(
-                    "",
-                    row,
-                    column
-            );
+            tableModel.setValueAt("", row, column);
         }
-
 
         calculateRow(row);
     }
@@ -293,26 +226,16 @@ public class PayrollTableManager {
 
     private void validateFedRate() {
 
-        String value =
-                fedRateField
-                        .getText()
-                        .trim();
-
+        String value = fedRateField.getText().trim();
 
         if (value.isEmpty()) {
-
             fedRateField.setText("0");
             return;
         }
 
-
         try {
 
-            double rate =
-                    Double.parseDouble(
-                            value
-                    );
-
+            double rate = Double.parseDouble(value);
 
             if (rate < 0) {
 
@@ -344,13 +267,7 @@ public class PayrollTableManager {
 
         stopEditing();
 
-
-        for (
-                int row = 0;
-                row < tableModel.getRowCount();
-                row++
-        ) {
-
+        for (int row = 0; row < tableModel.getRowCount(); row++) {
             calculateRow(row);
         }
     }
@@ -360,211 +277,57 @@ public class PayrollTableManager {
     // CALCULATE ROW
     // =========================
 
-    private void calculateRow(
-            int row
-    ) {
+    private void calculateRow(int row) {
 
-        double regularPay =
-                calculator.calculateRegularPay(
-                        getValue(
-                                row,
-                                HOURS
-                        ),
-                        getValue(
-                                row,
-                                HOURLY_RATE
-                        )
-                );
-
-
-        double otPay =
-                calculator.calculateOTPay(
-                        getValue(
-                                row,
-                                OT_HOURS
-                        ),
-                        getValue(
-                                row,
-                                OT_RATE
-                        )
-                );
-
-
-        double extra =
-                calculator.calculateExtraPay(
-                        getValue(
-                                row,
-                                EXTRA
-                        )
-                );
-
-
-        double totalGross =
-                regularPay +
-                        otPay +
-                        extra;
-
-
-        double federal =
-                calculator.calculateFedRate(
-                        totalGross,
-                        fedRateField.getText()
-                );
-
-
-        double socialSecurity =
-                calculator.calculateSocialSecurity(
-                        totalGross
-                );
-
-
-        double medicare =
-                calculator.calculateMedicare(
-                        totalGross
-                );
-
-
-        double maryland =
-                calculator.calculateMaryland(
-                        totalGross
-                );
-
-
-        double baltimore =
-                calculator.calculateBaltimore(
-                        totalGross
-                );
-
-
-        double net =
-                calculator.calculateNet(
-                        totalGross,
-                        federal,
-                        socialSecurity,
-                        medicare,
-                        maryland,
-                        baltimore
-                );
-
-
-        double slg =
-                maryland +
-                        baltimore;
-
-
-        double deductions =
-                totalGross -
-                        net;
-
-
-        tableModel.setValueAt(
-                String.format(
-                        "%.2f",
-                        regularPay
-                ),
-                row,
-                REGULAR_PAY
+        double regularPay = calculator.calculateRegularPay(
+                getValue(row, HOURS),
+                getValue(row, HOURLY_RATE)
         );
 
-
-        tableModel.setValueAt(
-                String.format(
-                        "%.2f",
-                        otPay
-                ),
-                row,
-                OT_TOTAL
+        double otPay = calculator.calculateOTPay(
+                getValue(row, OT_HOURS),
+                getValue(row, OT_RATE)
         );
 
-
-        tableModel.setValueAt(
-                String.format(
-                        "%.2f",
-                        totalGross
-                ),
-                row,
-                TOTAL_GROSS
+        double extra = calculator.calculateExtraPay(
+                getValue(row, EXTRA)
         );
 
+        double totalGross = regularPay + otPay + extra;
 
-        tableModel.setValueAt(
-                String.format(
-                        "%.2f",
-                        federal
-                ),
-                row,
-                FEDERAL
+        double federal = calculator.calculateFedRate(
+                totalGross,
+                fedRateField.getText()
         );
 
+        double socialSecurity = calculator.calculateSocialSecurity(totalGross);
+        double medicare = calculator.calculateMedicare(totalGross);
+        double maryland = calculator.calculateMaryland(totalGross);
+        double baltimore = calculator.calculateBaltimore(totalGross);
 
-        tableModel.setValueAt(
-                String.format(
-                        "%.2f",
-                        socialSecurity
-                ),
-                row,
-                SOCIAL_SECURITY
+        double net = calculator.calculateNet(
+                totalGross,
+                federal,
+                socialSecurity,
+                medicare,
+                maryland,
+                baltimore
         );
 
+        double slg = maryland + baltimore;
+        double deductions = totalGross - net;
 
-        tableModel.setValueAt(
-                String.format(
-                        "%.2f",
-                        medicare
-                ),
-                row,
-                MEDICARE
-        );
-
-
-        tableModel.setValueAt(
-                String.format(
-                        "%.2f",
-                        maryland
-                ),
-                row,
-                MD_TAX
-        );
-
-
-        tableModel.setValueAt(
-                String.format(
-                        "%.2f",
-                        baltimore
-                ),
-                row,
-                BC_TAX
-        );
-
-
-        tableModel.setValueAt(
-                String.format(
-                        "%.2f",
-                        net
-                ),
-                row,
-                NET_PAY
-        );
-
-
-        tableModel.setValueAt(
-                String.format(
-                        "%.2f",
-                        slg
-                ),
-                row,
-                SLG_TAX
-        );
-
-
-        tableModel.setValueAt(
-                String.format(
-                        "%.2f",
-                        deductions
-                ),
-                row,
-                TOTAL_DEDUCTIONS
-        );
+        tableModel.setValueAt(String.format("%.2f", regularPay), row, REGULAR_PAY);
+        tableModel.setValueAt(String.format("%.2f", otPay), row, OT_TOTAL);
+        tableModel.setValueAt(String.format("%.2f", totalGross), row, TOTAL_GROSS);
+        tableModel.setValueAt(String.format("%.2f", federal), row, FEDERAL);
+        tableModel.setValueAt(String.format("%.2f", socialSecurity), row, SOCIAL_SECURITY);
+        tableModel.setValueAt(String.format("%.2f", medicare), row, MEDICARE);
+        tableModel.setValueAt(String.format("%.2f", maryland), row, MD_TAX);
+        tableModel.setValueAt(String.format("%.2f", baltimore), row, BC_TAX);
+        tableModel.setValueAt(String.format("%.2f", net), row, NET_PAY);
+        tableModel.setValueAt(String.format("%.2f", slg), row, SLG_TAX);
+        tableModel.setValueAt(String.format("%.2f", deductions), row, TOTAL_DEDUCTIONS);
     }
 
 
@@ -572,22 +335,13 @@ public class PayrollTableManager {
     // LOAD EMPLOYEE
     // =========================
 
-    public void loadEmployee(
-            Employee employee
-    ) {
+    public void loadEmployee(Employee employee) {
 
         tableModel.setRowCount(0);
 
-        fedRateField.setText(
-                employee.fed_rate
-        );
+        fedRateField.setText(employee.fed_rate);
 
-
-        for (
-                int i = 0;
-                i < PayrollData.PAY_PERIODS.length;
-                i++
-        ) {
+        for (int i = 0; i < PayrollData.PAY_PERIODS.length; i++) {
 
             Object[] row = {
 
@@ -616,9 +370,7 @@ public class PayrollTableManager {
                     ""
             };
 
-
             tableModel.addRow(row);
-
             calculateRow(i);
         }
     }
@@ -628,60 +380,20 @@ public class PayrollTableManager {
     // SAVE EMPLOYEE
     // =========================
 
-    public void saveEmployee(
-            Employee employee
-    ) {
+    public void saveEmployee(Employee employee) {
 
         stopEditing();
-
         validateFedRate();
 
+        employee.fed_rate = fedRateField.getText().trim();
 
-        employee.fed_rate =
-                fedRateField
-                        .getText()
-                        .trim();
+        for (int i = 0; i < tableModel.getRowCount(); i++) {
 
-
-        for (
-                int i = 0;
-                i < tableModel.getRowCount();
-                i++
-        ) {
-
-            employee.hours[i] =
-                    getValue(
-                            i,
-                            HOURS
-                    );
-
-
-            employee.ot_hours[i] =
-                    getValue(
-                            i,
-                            OT_HOURS
-                    );
-
-
-            employee.hourly_rates[i] =
-                    getValue(
-                            i,
-                            HOURLY_RATE
-                    );
-
-
-            employee.ot_rates[i] =
-                    getValue(
-                            i,
-                            OT_RATE
-                    );
-
-
-            employee.extra[i] =
-                    getValue(
-                            i,
-                            EXTRA
-                    );
+            employee.hours[i] = getValue(i, HOURS);
+            employee.ot_hours[i] = getValue(i, OT_HOURS);
+            employee.hourly_rates[i] = getValue(i, HOURLY_RATE);
+            employee.ot_rates[i] = getValue(i, OT_RATE);
+            employee.extra[i] = getValue(i, EXTRA);
         }
     }
 
@@ -690,53 +402,26 @@ public class PayrollTableManager {
     // CHANGE HOURLY RATE
     // =========================
 
-    public void changeHourlyRate(
-            int row,
-            String newRate
-    ) {
+    public void changeHourlyRate(int row, String newRate) {
 
         try {
 
-            double rate =
-                    Double.parseDouble(
-                            newRate.trim()
-                    );
-
+            double rate = Double.parseDouble(newRate.trim());
 
             if (rate < 0) {
                 return;
             }
 
+            tableModel.setValueAt(newRate.trim(), row, HOURLY_RATE);
 
-            tableModel.setValueAt(
-                    newRate.trim(),
-                    row,
-                    HOURLY_RATE
-            );
-
-
-            for (
-                    int i = row + 1;
-                    i < tableModel.getRowCount();
-                    i++
-            ) {
-
-                tableModel.setValueAt(
-                        newRate.trim(),
-                        i,
-                        HOURLY_RATE
-                );
-
-
+            for (int i = row + 1; i < tableModel.getRowCount(); i++) {
+                tableModel.setValueAt(newRate.trim(), i, HOURLY_RATE);
                 calculateRow(i);
             }
 
-
             calculateRow(row);
 
-        } catch (
-                NumberFormatException ignored
-        ) {
+        } catch (NumberFormatException ignored) {
         }
     }
 
@@ -745,53 +430,26 @@ public class PayrollTableManager {
     // CHANGE OT RATE
     // =========================
 
-    public void changeOTRate(
-            int row,
-            String newRate
-    ) {
+    public void changeOTRate(int row, String newRate) {
 
         try {
 
-            double rate =
-                    Double.parseDouble(
-                            newRate.trim()
-                    );
-
+            double rate = Double.parseDouble(newRate.trim());
 
             if (rate < 0) {
                 return;
             }
 
+            tableModel.setValueAt(newRate.trim(), row, OT_RATE);
 
-            tableModel.setValueAt(
-                    newRate.trim(),
-                    row,
-                    OT_RATE
-            );
-
-
-            for (
-                    int i = row + 1;
-                    i < tableModel.getRowCount();
-                    i++
-            ) {
-
-                tableModel.setValueAt(
-                        newRate.trim(),
-                        i,
-                        OT_RATE
-                );
-
-
+            for (int i = row + 1; i < tableModel.getRowCount(); i++) {
+                tableModel.setValueAt(newRate.trim(), i, OT_RATE);
                 calculateRow(i);
             }
 
-
             calculateRow(row);
 
-        } catch (
-                NumberFormatException ignored
-        ) {
+        } catch (NumberFormatException ignored) {
         }
     }
 
@@ -800,28 +458,16 @@ public class PayrollTableManager {
     // CALCULATE TOTALS
     // =========================
 
-
     public Map<String, Double> calculateTotals(
             EmployeeManager employeeManager,
             boolean[] includedPayPeriods
     ) {
 
-        Map<String, Double> totals =
-                createEmptyTotals();
+        Map<String, Double> totals = createEmptyTotals();
 
-
-        for (
-                Employee employee :
-                employeeManager.getEmployees()
-        ) {
-
-            addEmployeeTotals(
-                    totals,
-                    employee,
-                    includedPayPeriods
-            );
+        for (Employee employee : employeeManager.getEmployees()) {
+            addEmployeeTotals(totals, employee, includedPayPeriods);
         }
-
 
         return totals;
     }
@@ -836,16 +482,13 @@ public class PayrollTableManager {
             boolean[] includedPayPeriods
     ) {
 
-        Map<String, Double> totals =
-                createEmptyTotals();
-
+        Map<String, Double> totals = createEmptyTotals();
 
         addEmployeeTotals(
                 totals,
                 employee,
                 includedPayPeriods
         );
-
 
         return totals;
     }
@@ -861,203 +504,66 @@ public class PayrollTableManager {
             boolean[] includedPayPeriods
     ) {
 
-        for (
-                int i = 0;
-                i < PayrollData.PAY_PERIODS.length;
-                i++
-        ) {
+        for (int i = 0; i < PayrollData.PAY_PERIODS.length; i++) {
 
             if (!includedPayPeriods[i]) {
                 continue;
             }
 
+            double hours = getNumber(employee.hours[i]);
+            double otHours = getNumber(employee.ot_hours[i]);
 
-            double hours =
-                    getNumber(
-                            employee.hours[i]
-                    );
-
-
-            double otHours =
-                    getNumber(
-                            employee.ot_hours[i]
-                    );
-
-
-            double regularPay =
-                    calculator.calculateRegularPay(
-                            employee.hours[i],
-                            employee.hourly_rates[i]
-                    );
-
-
-            double otPay =
-                    calculator.calculateOTPay(
-                            employee.ot_hours[i],
-                            employee.ot_rates[i]
-                    );
-
-
-            double extra =
-                    calculator.calculateExtraPay(
-                            employee.extra[i]
-                    );
-
-
-            double totalGross =
-                    regularPay +
-                            otPay +
-                            extra;
-
-
-            double federal =
-                    calculator.calculateFedRate(
-                            totalGross,
-                            employee.fed_rate
-                    );
-
-
-            double socialSecurity =
-                    calculator.calculateSocialSecurity(
-                            totalGross
-                    );
-
-
-            double medicare =
-                    calculator.calculateMedicare(
-                            totalGross
-                    );
-
-
-            double maryland =
-                    calculator.calculateMaryland(
-                            totalGross
-                    );
-
-
-            double baltimore =
-                    calculator.calculateBaltimore(
-                            totalGross
-                    );
-
-
-            double slg =
-                    maryland +
-                            baltimore;
-
-
-            double net =
-                    calculator.calculateNet(
-                            totalGross,
-                            federal,
-                            socialSecurity,
-                            medicare,
-                            maryland,
-                            baltimore
-                    );
-
-
-            double deductions =
-                    totalGross -
-                            net;
-
-
-            addToTotal(
-                    totals,
-                    "Hours",
-                    hours
+            double regularPay = calculator.calculateRegularPay(
+                    employee.hours[i],
+                    employee.hourly_rates[i]
             );
 
-
-            addToTotal(
-                    totals,
-                    "OT Hours",
-                    otHours
+            double otPay = calculator.calculateOTPay(
+                    employee.ot_hours[i],
+                    employee.ot_rates[i]
             );
 
+            double extra = calculator.calculateExtraPay(employee.extra[i]);
 
-            addToTotal(
-                    totals,
-                    "Regular Pay",
-                    regularPay
+            double totalGross = regularPay + otPay + extra;
+
+            double federal = calculator.calculateFedRate(
+                    totalGross,
+                    employee.fed_rate
             );
 
+            double socialSecurity = calculator.calculateSocialSecurity(totalGross);
+            double medicare = calculator.calculateMedicare(totalGross);
+            double maryland = calculator.calculateMaryland(totalGross);
+            double baltimore = calculator.calculateBaltimore(totalGross);
 
-            addToTotal(
-                    totals,
-                    "OT Pay",
-                    otPay
-            );
+            double slg = maryland + baltimore;
 
-
-            addToTotal(
-                    totals,
-                    "Bonus",
-                    extra
-            );
-
-
-            addToTotal(
-                    totals,
-                    "Total Gross",
-                    totalGross
-            );
-
-
-            addToTotal(
-                    totals,
-                    "Federal",
-                    federal
-            );
-
-
-            addToTotal(
-                    totals,
-                    "Social Security",
-                    socialSecurity
-            );
-
-
-            addToTotal(
-                    totals,
-                    "Medicare",
-                    medicare
-            );
-
-
-            addToTotal(
-                    totals,
-                    "MD Tax",
-                    maryland
-            );
-
-
-            addToTotal(
-                    totals,
-                    "BC Tax",
+            double net = calculator.calculateNet(
+                    totalGross,
+                    federal,
+                    socialSecurity,
+                    medicare,
+                    maryland,
                     baltimore
             );
 
+            double deductions = totalGross - net;
 
-            addToTotal(
-                    totals,
-                    "SLG Tax",
-                    slg
-            );
-
-
-            addToTotal(
-                    totals,
-                    "Total Deductions",
-                    deductions
-            );
-
-
-            addToTotal(
-                    totals,
-                    "Net Pay",
-                    net
-            );
+            addToTotal(totals, "Hours", hours);
+            addToTotal(totals, "OT Hours", otHours);
+            addToTotal(totals, "Regular Pay", regularPay);
+            addToTotal(totals, "OT Pay", otPay);
+            addToTotal(totals, "Bonus", extra);
+            addToTotal(totals, "Total Gross", totalGross);
+            addToTotal(totals, "Federal", federal);
+            addToTotal(totals, "Social Security", socialSecurity);
+            addToTotal(totals, "Medicare", medicare);
+            addToTotal(totals, "MD Tax", maryland);
+            addToTotal(totals, "BC Tax", baltimore);
+            addToTotal(totals, "SLG Tax", slg);
+            addToTotal(totals, "Total Deductions", deductions);
+            addToTotal(totals, "Net Pay", net);
         }
     }
 
@@ -1068,80 +574,22 @@ public class PayrollTableManager {
 
     private Map<String, Double> createEmptyTotals() {
 
-        Map<String, Double> totals =
-                new LinkedHashMap<>();
+        Map<String, Double> totals = new LinkedHashMap<>();
 
-
-        totals.put(
-                "Hours",
-                0.0
-        );
-
-        totals.put(
-                "OT Hours",
-                0.0
-        );
-
-        totals.put(
-                "Regular Pay",
-                0.0
-        );
-
-        totals.put(
-                "OT Pay",
-                0.0
-        );
-
-        totals.put(
-                "Bonus",
-                0.0
-        );
-
-        totals.put(
-                "Total Gross",
-                0.0
-        );
-
-        totals.put(
-                "Federal",
-                0.0
-        );
-
-        totals.put(
-                "Social Security",
-                0.0
-        );
-
-        totals.put(
-                "Medicare",
-                0.0
-        );
-
-        totals.put(
-                "MD Tax",
-                0.0
-        );
-
-        totals.put(
-                "BC Tax",
-                0.0
-        );
-
-        totals.put(
-                "SLG Tax",
-                0.0
-        );
-
-        totals.put(
-                "Total Deductions",
-                0.0
-        );
-
-        totals.put(
-                "Net Pay",
-                0.0
-        );
-
+        totals.put("Hours", 0.0);
+        totals.put("OT Hours", 0.0);
+        totals.put("Regular Pay", 0.0);
+        totals.put("OT Pay", 0.0);
+        totals.put("Bonus", 0.0);
+        totals.put("Total Gross", 0.0);
+        totals.put("Federal", 0.0);
+        totals.put("Social Security", 0.0);
+        totals.put("Medicare", 0.0);
+        totals.put("MD Tax", 0.0);
+        totals.put("BC Tax", 0.0);
+        totals.put("SLG Tax", 0.0);
+        totals.put("Total Deductions", 0.0);
+        totals.put("Net Pay", 0.0);
 
         return totals;
     }
@@ -1157,10 +605,7 @@ public class PayrollTableManager {
             double amount
     ) {
 
-        totals.put(
-                name,
-                totals.get(name) + amount
-        );
+        totals.put(name, totals.get(name) + amount);
     }
 
 
@@ -1168,29 +613,16 @@ public class PayrollTableManager {
     // GET NUMBER
     // =========================
 
-    private double getNumber(
-            String value
-    ) {
+    private double getNumber(String value) {
 
-        if (
-                value == null ||
-                        value.trim().isEmpty()
-        ) {
-
+        if (value == null || value.trim().isEmpty()) {
             return 0;
         }
 
-
         try {
+            return Double.parseDouble(value.trim());
 
-            return Double.parseDouble(
-                    value.trim()
-            );
-
-        } catch (
-                NumberFormatException error
-        ) {
-
+        } catch (NumberFormatException error) {
             return 0;
         }
     }
@@ -1200,22 +632,13 @@ public class PayrollTableManager {
     // GET VALUE
     // =========================
 
-    public String getValue(
-            int row,
-            int column
-    ) {
+    public String getValue(int row, int column) {
 
-        Object value =
-                tableModel.getValueAt(
-                        row,
-                        column
-                );
-
+        Object value = tableModel.getValueAt(row, column);
 
         if (value == null) {
             return "";
         }
-
 
         return value.toString();
     }
@@ -1228,9 +651,7 @@ public class PayrollTableManager {
     public void stopEditing() {
 
         if (table.isEditing()) {
-
-            table.getCellEditor()
-                    .stopCellEditing();
+            table.getCellEditor().stopCellEditing();
         }
     }
 }

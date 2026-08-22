@@ -13,39 +13,33 @@ public class PayrollCalculator {
         return Double.parseDouble(value);
     }
 
+
     // =========================
     // REGULAR PAY
     // =========================
 
-    public double calculateRegularPay(
-            String hours,
-            String hourly_rate) {
-
-        return parseDouble(hours)
-                * parseDouble(hourly_rate);
+    public double calculateRegularPay(String hours, String hourly_rate) {
+        return parseDouble(hours) * parseDouble(hourly_rate);
     }
+
 
     // =========================
     // OT PAY
     // =========================
 
-    public double calculateOTPay(
-            String ot_hours,
-            String ot_rate) {
-
-        return parseDouble(ot_hours)
-                * parseDouble(ot_rate);
+    public double calculateOTPay(String ot_hours, String ot_rate) {
+        return parseDouble(ot_hours) * parseDouble(ot_rate);
     }
+
 
     // =========================
     // EXTRA PAY
     // =========================
 
-    public double calculateExtraPay(
-            String extra) {
-
+    public double calculateExtraPay(String extra) {
         return parseDouble(extra);
     }
+
 
     // =========================
     // TOTAL GROSS
@@ -58,60 +52,44 @@ public class PayrollCalculator {
             String ot_rate,
             String extra) {
 
-        return calculateRegularPay(
-                hours,
-                hourly_rate
-        )
-                + calculateOTPay(
-                ot_hours,
-                ot_rate
-        )
-                + calculateExtraPay(
-                extra
-        );
+        return calculateRegularPay(hours, hourly_rate)
+                + calculateOTPay(ot_hours, ot_rate)
+                + calculateExtraPay(extra);
     }
+
 
     // =========================
     // TOTAL FEDERAL
     // =========================
 
-    public double calculateFedRate(
-            double gross,
-            String fed_rate
-    ) {
-
+    public double calculateFedRate(double gross, String fed_rate) {
         return gross * parseDouble(fed_rate) / 100;
     }
+
 
     // =========================
     // TOTAL SOCIAL SECURITY
     // =========================
 
-    public double calculateSocialSecurity(
-            double gross
-    ) {
-
+    public double calculateSocialSecurity(double gross) {
         return gross * 0.062;
     }
+
 
     // =========================
     // TOTAL MEDICARE
     // =========================
 
-    public double calculateMedicare(
-            double gross
-    ) {
-
+    public double calculateMedicare(double gross) {
         return gross * 0.0145;
     }
+
 
     // =========================
     // TOTAL MARYLAND TAX
     // =========================
 
-    public double calculateMaryland(
-            double gross
-    ) {
+    public double calculateMaryland(double gross) {
 
         double result = 0;
 
@@ -128,26 +106,22 @@ public class PayrollCalculator {
         for (int i = 0; i < thresholds.length; i++) {
 
             if (gross > thresholds[i]) {
-
-                result +=
-                        (gross - thresholds[i])
-                                * rates[i];
+                result += (gross - thresholds[i]) * rates[i];
             }
         }
 
         return result;
     }
 
+
     // =========================
     // TOTAL BALTIMORE
     // =========================
 
-    public double calculateBaltimore(
-            double gross
-    ) {
-
+    public double calculateBaltimore(double gross) {
         return gross * 0.032;
     }
+
 
     // =========================
     // TOTAL NET
@@ -159,8 +133,7 @@ public class PayrollCalculator {
             double soc,
             double med,
             double md,
-            double bc
-    ) {
+            double bc) {
 
         return gross
                 - fed
