@@ -239,6 +239,9 @@ public class PayrollGUI {
 
                     if (current > 0) {
                         employeeSelector.setSelectedIndex(current - 1);
+
+                    } else {
+                        employeeSelector.setSelectedIndex (employeeManager.getEmployeeCount()-1);
                     }
                 }
         );
@@ -259,6 +262,9 @@ public class PayrollGUI {
 
                     if (current < employeeManager.getEmployeeCount() - 1) {
                         employeeSelector.setSelectedIndex(current + 1);
+                    } else {
+                        employeeSelector.setSelectedIndex(0);
+
                     }
                 }
         );
