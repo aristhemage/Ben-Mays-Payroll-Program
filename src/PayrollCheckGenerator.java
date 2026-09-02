@@ -60,7 +60,12 @@ public class PayrollCheckGenerator {
             double ytd_bonus
     ) {
 
-        BufferedImage image = new BufferedImage(WIDTH, HEIGHT, BufferedImage.TYPE_INT_RGB);
+        BufferedImage image = new BufferedImage(
+                WIDTH,
+                HEIGHT,
+                BufferedImage.TYPE_INT_RGB
+        );
+
         Graphics2D g = image.createGraphics();
 
 
@@ -68,10 +73,25 @@ public class PayrollCheckGenerator {
         // RENDERING SETTINGS
         // ==========================================
 
-        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-        g.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
-        g.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
+        g.setRenderingHint(
+                RenderingHints.KEY_ANTIALIASING,
+                RenderingHints.VALUE_ANTIALIAS_ON
+        );
+
+        g.setRenderingHint(
+                RenderingHints.KEY_TEXT_ANTIALIASING,
+                RenderingHints.VALUE_TEXT_ANTIALIAS_ON
+        );
+
+        g.setRenderingHint(
+                RenderingHints.KEY_RENDERING,
+                RenderingHints.VALUE_RENDER_QUALITY
+        );
+
+        g.setRenderingHint(
+                RenderingHints.KEY_FRACTIONALMETRICS,
+                RenderingHints.VALUE_FRACTIONALMETRICS_ON
+        );
 
 
         // ==========================================
@@ -86,21 +106,38 @@ public class PayrollCheckGenerator {
         // SCALE ORIGINAL DESIGN
         // ==========================================
 
-        g.scale(WIDTH / DESIGN_WIDTH, HEIGHT / DESIGN_HEIGHT);
+        g.scale(
+                WIDTH / DESIGN_WIDTH,
+                HEIGHT / DESIGN_HEIGHT
+        );
 
 
         // ==========================================
         // TOP CHECK INFORMATION
         // ==========================================
 
-        drawCheck(g, name, pay_date, pay_period, start_date, end_date, cur_net);
+        drawCheck(
+                g,
+                name,
+                pay_date,
+                pay_period,
+                start_date,
+                end_date,
+                cur_net
+        );
 
 
         // ==========================================
         // FIRST TEAR LINE
         // ==========================================
 
-        drawDashedLine(g, 22, 245, 565, 245);
+        drawDashedLine(
+                g,
+                22,
+                245,
+                565,
+                245
+        );
 
 
         // ==========================================
@@ -108,11 +145,35 @@ public class PayrollCheckGenerator {
         // ==========================================
 
         drawTopStatement(
-                g, name, pay_date, pay_period, start_date, end_date, address, city, zip,
-                reg_hours, ot_hours, reg_pay, ot_pay, reg_ytd, ot_ytd,
-                cur_fed, cur_social, cur_medicare, cur_slg, cur_deductions, cur_net,
-                ytd_fed, ytd_social, ytd_medicare, ytd_slg, ytd_deductions, ytd_net,
-                bonus, ytd_bonus
+                g,
+                name,
+                pay_date,
+                pay_period,
+                start_date,
+                end_date,
+                address,
+                city,
+                zip,
+                reg_hours,
+                ot_hours,
+                reg_pay,
+                ot_pay,
+                reg_ytd,
+                ot_ytd,
+                cur_fed,
+                cur_social,
+                cur_medicare,
+                cur_slg,
+                cur_deductions,
+                cur_net,
+                ytd_fed,
+                ytd_social,
+                ytd_medicare,
+                ytd_slg,
+                ytd_deductions,
+                ytd_net,
+                bonus,
+                ytd_bonus
         );
 
 
@@ -120,7 +181,13 @@ public class PayrollCheckGenerator {
         // SECOND TEAR LINE
         // ==========================================
 
-        drawDashedLine(g, 22, 491, 565, 491);
+        drawDashedLine(
+                g,
+                22,
+                491,
+                565,
+                491
+        );
 
 
         // ==========================================
@@ -128,26 +195,142 @@ public class PayrollCheckGenerator {
         // ==========================================
 
         drawBottomStatement(
-                g, name, pay_date, pay_period, start_date, end_date,
-                reg_hours, ot_hours, reg_pay, ot_pay, reg_ytd, ot_ytd,
-                cur_fed, cur_social, cur_medicare, cur_slg, cur_deductions, cur_net,
-                ytd_fed, ytd_social, ytd_medicare, ytd_slg, ytd_deductions, ytd_net,
-                bonus, ytd_bonus
+                g,
+                name,
+                pay_date,
+                pay_period,
+                start_date,
+                end_date,
+                reg_hours,
+                ot_hours,
+                reg_pay,
+                ot_pay,
+                reg_ytd,
+                ot_ytd,
+                cur_fed,
+                cur_social,
+                cur_medicare,
+                cur_slg,
+                cur_deductions,
+                cur_net,
+                ytd_fed,
+                ytd_social,
+                ytd_medicare,
+                ytd_slg,
+                ytd_deductions,
+                ytd_net,
+                bonus,
+                ytd_bonus
         );
 
 
         // ==========================================
-        // FINISH
+        // FINISH RENDERING
         // ==========================================
 
         g.dispose();
 
+
+        // ==========================================
+        // SAVE GENERATED CHECK
+        // ==========================================
+
         try {
 
-            ImageIO.write(image, "png", new File("GeneratedCheck.png"));
-            System.out.println("Created GeneratedCheck.png");
+            /*
+             * Store generated checks in the user's Documents folder.
+             *
+             * On Mac this becomes:
+             *
+             * ~/Documents/Payroll Manager/Checks/
+             *
+             * On Windows this becomes:
+             *
+             * C:\Users\<user>\Documents\Payroll Manager\Checks\
+             */
+
+            File checksDirectory = new File(
+                    System.getProperty("user.home"),
+                    "Documents/Payroll Manager/Checks"
+            );
+
+
+            // Create the directory if it doesn't exist
+            if (!checksDirectory.exists()) {
+
+                if (!checksDirectory.mkdirs()) {
+
+                    System.err.println(
+                            "Could not create checks directory: "
+                                    + checksDirectory.getAbsolutePath()
+                    );
+                }
+            }
+
+
+            /*
+             * Create a useful filename.
+             *
+             * Example:
+             *
+             * John Smith - PP 18 - 08-28-2026.png
+             */
+
+            String fileName =
+                    name
+                            + " - PP "
+                            + pay_period
+                            + " - "
+                            + pay_date
+                            + ".png";
+
+
+            /*
+             * Remove characters that are illegal in filenames.
+             *
+             * This is especially important because Windows does not
+             * allow characters such as:
+             *
+             * \ / : * ? " < > |
+             */
+
+            fileName = fileName.replaceAll(
+                    "[\\\\/:*?\"<>|]",
+                    "_"
+            );
+
+
+            // Create the final file
+            File outputFile = new File(
+                    checksDirectory,
+                    fileName
+            );
+
+
+            // Save the PNG
+            ImageIO.write(
+                    image,
+                    "png",
+                    outputFile
+            );
+
+
+            // Tell us exactly where the file was created
+            System.out.println(
+                    "Created check:"
+            );
+
+            System.out.println(
+                    outputFile.getAbsolutePath()
+            );
+
 
         } catch (IOException e) {
+
+            System.err.println(
+                    "Failed to save generated check."
+            );
+
             e.printStackTrace();
         }
     }
@@ -167,37 +350,41 @@ public class PayrollCheckGenerator {
             double cur_net
     ) {
 
-        // ==========================================
-        // DATE
-        // ==========================================
+        drawRight(
+                g,
+                pay_date,
+                561,
+                49,
+                15,
+                Font.PLAIN
+        );
 
-        drawRight(g, pay_date, 561, 49, 15, Font.PLAIN);
+        drawText(
+                g,
+                name,
+                70,
+                83,
+                17,
+                Font.PLAIN
+        );
 
+        drawRight(
+                g,
+                String.format("$%,.2f", cur_net),
+                561,
+                92,
+                16,
+                Font.BOLD
+        );
 
-        // ==========================================
-        // EMPLOYEE NAME
-        // ==========================================
-
-        drawText(g, name, 70, 83, 17, Font.PLAIN);
-
-
-        // ==========================================
-        // NET PAY
-        // ==========================================
-
-        drawRight(g, String.format("$%,.2f", cur_net), 561, 92, 16, Font.BOLD);
-
-
-        // ==========================================
-        // AMOUNT IN WORDS
-        // ==========================================
-
-        drawText(g, NumberToWords.convert(cur_net), 88, 115, 16, Font.PLAIN);
-
-
-        // ==========================================
-        // PAY PERIOD
-        // ==========================================
+        drawText(
+                g,
+                NumberToWords.convert(cur_net),
+                88,
+                115,
+                16,
+                Font.PLAIN
+        );
 
         drawText(
                 g,
@@ -253,28 +440,40 @@ public class PayrollCheckGenerator {
 
         drawBorder(g, x, y, width, height);
 
-
-        // ==========================================
-        // HEADER
-        // ==========================================
-
         g.setColor(HEADER);
-        g.fillRect(x + 1, y + 1, width - 2, 24);
+        g.fillRect(
+                x + 1,
+                y + 1,
+                width - 2,
+                24
+        );
 
-        drawText(g, "Earnings Statement", 32, 269, 12, Font.BOLD);
-        drawCentered(g, pay_date, 292, 269, 9, Font.PLAIN);
+        drawText(
+                g,
+                "Earnings Statement",
+                32,
+                269,
+                12,
+                Font.BOLD
+        );
 
+        drawCentered(
+                g,
+                pay_date,
+                292,
+                269,
+                9,
+                Font.PLAIN
+        );
 
-        // ==========================================
-        // EMPLOYEE NAME
-        // ==========================================
-
-        drawText(g, name, 32, 294, 11, Font.BOLD);
-
-
-        // ==========================================
-        // PAY PERIOD
-        // ==========================================
+        drawText(
+                g,
+                name,
+                32,
+                294,
+                11,
+                Font.BOLD
+        );
 
         drawText(
                 g,
@@ -285,32 +484,40 @@ public class PayrollCheckGenerator {
                 Font.PLAIN
         );
 
-
-        // ==========================================
-        // EARNINGS
-        // ==========================================
-
         drawTopEarnings(
-                g, reg_hours, ot_hours, reg_pay, ot_pay,
-                reg_ytd, ot_ytd, cur_bonus, ytd_bonus
+                g,
+                reg_hours,
+                ot_hours,
+                reg_pay,
+                ot_pay,
+                reg_ytd,
+                ot_ytd,
+                cur_bonus,
+                ytd_bonus
         );
 
-
-        // ==========================================
-        // ADDRESS
-        // ==========================================
-
-        drawTopAddress(g, name, address, city, zip);
-
-
-        // ==========================================
-        // DEDUCTIONS
-        // ==========================================
+        drawTopAddress(
+                g,
+                name,
+                address,
+                city,
+                zip
+        );
 
         drawTopDeductions(
-                g, cur_fed, cur_social, cur_medicare, cur_slg,
-                cur_deductions, cur_net, ytd_fed, ytd_social,
-                ytd_medicare, ytd_slg, ytd_deductions, ytd_net
+                g,
+                cur_fed,
+                cur_social,
+                cur_medicare,
+                cur_slg,
+                cur_deductions,
+                cur_net,
+                ytd_fed,
+                ytd_social,
+                ytd_medicare,
+                ytd_slg,
+                ytd_deductions,
+                ytd_net
         );
     }
 
@@ -341,39 +548,19 @@ public class PayrollCheckGenerator {
 
         drawLine(g, left, 335, right, 335);
 
-
-        // ==========================================
-        // REGULAR PAY
-        // ==========================================
-
         drawText(g, "Regular Pay", 32, 349, 8, Font.PLAIN);
         drawRight(g, String.format("%.2f", reg_hours), 307, 349, 8, Font.PLAIN);
         drawRight(g, String.format("$%,.2f", reg_pay), 411, 349, 8, Font.PLAIN);
         drawRight(g, String.format("$%,.2f", reg_ytd), 512, 349, 8, Font.PLAIN);
-
-
-        // ==========================================
-        // OVERTIME PAY
-        // ==========================================
 
         drawText(g, "Overtime Pay", 32, 360, 8, Font.PLAIN);
         drawRight(g, String.format("%.2f", ot_hours), 307, 360, 8, Font.PLAIN);
         drawRight(g, String.format("$%,.2f", ot_pay), 411, 360, 8, Font.PLAIN);
         drawRight(g, String.format("$%,.2f", ot_ytd), 512, 360, 8, Font.PLAIN);
 
-
-        // ==========================================
-        // BONUS / OTHER
-        // ==========================================
-
         drawText(g, "Bonus / Other", 32, 371, 8, Font.PLAIN);
         drawRight(g, "$" + bonus, 411, 371, 8, Font.PLAIN);
         drawRight(g, "$" + bonus_ytd, 512, 371, 8, Font.PLAIN);
-
-
-        // ==========================================
-        // GROSS PAY
-        // ==========================================
 
         drawText(g, "Gross Pay", 32, 382, 8, Font.PLAIN);
         drawRight(g, String.format("$%,.2f", reg_pay + ot_pay), 411, 382, 8, Font.PLAIN);
@@ -398,7 +585,13 @@ public class PayrollCheckGenerator {
         int width = 315;
         int height = 80;
 
-        drawLightDashedBox(g, x, y, width, height);
+        drawLightDashedBox(
+                g,
+                x,
+                y,
+                width,
+                height
+        );
 
         drawText(g, name, 43, 425, 12, Font.BOLD);
         drawText(g, address, 43, 442, 11, Font.PLAIN);
@@ -472,9 +665,32 @@ public class PayrollCheckGenerator {
 
             int textY = startY + i * 9;
 
-            drawText(g, labels[i], 364, textY, 6, Font.PLAIN);
-            drawRight(g, String.format("$%,.2f", currentValues[i]), 492, textY, 6, Font.PLAIN);
-            drawRight(g, String.format("$%,.2f", ytdValues[i]), 545, textY, 6, Font.PLAIN);
+            drawText(
+                    g,
+                    labels[i],
+                    364,
+                    textY,
+                    6,
+                    Font.PLAIN
+            );
+
+            drawRight(
+                    g,
+                    String.format("$%,.2f", currentValues[i]),
+                    492,
+                    textY,
+                    6,
+                    Font.PLAIN
+            );
+
+            drawRight(
+                    g,
+                    String.format("$%,.2f", ytdValues[i]),
+                    545,
+                    textY,
+                    6,
+                    Font.PLAIN
+            );
         }
     }
 
@@ -520,27 +736,39 @@ public class PayrollCheckGenerator {
         drawBorder(g, x, y, width, height);
 
         g.setColor(HEADER);
-        g.fillRect(x + 1, y + 1, width - 2, 24);
+        g.fillRect(
+                x + 1,
+                y + 1,
+                width - 2,
+                24
+        );
 
+        drawText(
+                g,
+                "Earnings Statement",
+                32,
+                515,
+                12,
+                Font.BOLD
+        );
 
-        // ==========================================
-        // HEADER
-        // ==========================================
+        drawCentered(
+                g,
+                pay_date,
+                292,
+                515,
+                9,
+                Font.PLAIN
+        );
 
-        drawText(g, "Earnings Statement", 32, 515, 12, Font.BOLD);
-        drawCentered(g, pay_date, 292, 515, 9, Font.PLAIN);
-
-
-        // ==========================================
-        // EMPLOYEE
-        // ==========================================
-
-        drawText(g, name, 32, 540, 11, Font.BOLD);
-
-
-        // ==========================================
-        // PAY PERIOD
-        // ==========================================
+        drawText(
+                g,
+                name,
+                32,
+                540,
+                11,
+                Font.BOLD
+        );
 
         drawText(
                 g,
@@ -551,25 +779,32 @@ public class PayrollCheckGenerator {
                 Font.PLAIN
         );
 
-
-        // ==========================================
-        // EARNINGS
-        // ==========================================
-
         drawBottomEarnings(
-                g, reg_hours, ot_hours, reg_pay, ot_pay,
-                reg_ytd, ot_ytd, cur_bonus, ytd_bonus
+                g,
+                reg_hours,
+                ot_hours,
+                reg_pay,
+                ot_pay,
+                reg_ytd,
+                ot_ytd,
+                cur_bonus,
+                ytd_bonus
         );
 
-
-        // ==========================================
-        // DEDUCTIONS
-        // ==========================================
-
         drawBottomDeductions(
-                g, cur_fed, cur_social, cur_medicare, cur_slg,
-                cur_deductions, cur_net, ytd_fed, ytd_social,
-                ytd_medicare, ytd_slg, ytd_deductions, ytd_net
+                g,
+                cur_fed,
+                cur_social,
+                cur_medicare,
+                cur_slg,
+                cur_deductions,
+                cur_net,
+                ytd_fed,
+                ytd_social,
+                ytd_medicare,
+                ytd_slg,
+                ytd_deductions,
+                ytd_net
         );
     }
 
@@ -600,39 +835,19 @@ public class PayrollCheckGenerator {
 
         drawLine(g, left, 581, right, 581);
 
-
-        // ==========================================
-        // REGULAR
-        // ==========================================
-
         drawText(g, "Regular Pay", 32, 596, 8, Font.PLAIN);
         drawRight(g, String.format("%.2f", reg_hours), 307, 596, 8, Font.PLAIN);
         drawRight(g, String.format("$%,.2f", reg_pay), 411, 596, 8, Font.PLAIN);
         drawRight(g, String.format("$%,.2f", reg_ytd), 512, 596, 8, Font.PLAIN);
-
-
-        // ==========================================
-        // OVERTIME
-        // ==========================================
 
         drawText(g, "Overtime Pay", 32, 607, 8, Font.PLAIN);
         drawRight(g, String.format("%.2f", ot_hours), 307, 607, 8, Font.PLAIN);
         drawRight(g, String.format("$%,.2f", ot_pay), 411, 607, 8, Font.PLAIN);
         drawRight(g, String.format("$%,.2f", ot_ytd), 512, 607, 8, Font.PLAIN);
 
-
-        // ==========================================
-        // BONUS
-        // ==========================================
-
         drawText(g, "Bonus / Other", 32, 618, 8, Font.PLAIN);
         drawRight(g, "$" + cur_bonus, 411, 618, 8, Font.PLAIN);
         drawRight(g, "$" + bonus_ytd, 512, 618, 8, Font.PLAIN);
-
-
-        // ==========================================
-        // GROSS
-        // ==========================================
 
         drawText(g, "Gross Pay", 32, 629, 8, Font.PLAIN);
         drawRight(g, String.format("$%,.2f", reg_pay + ot_pay), 411, 629, 8, Font.PLAIN);
@@ -702,9 +917,32 @@ public class PayrollCheckGenerator {
 
             int textY = startY + i * 11;
 
-            drawText(g, labels[i], 32, textY, 8, Font.PLAIN);
-            drawRight(g, String.format("$%,.2f", currentValues[i]), 411, textY, 8, Font.PLAIN);
-            drawRight(g, String.format("$%,.2f", ytdValues[i]), 512, textY, 8, Font.PLAIN);
+            drawText(
+                    g,
+                    labels[i],
+                    32,
+                    textY,
+                    8,
+                    Font.PLAIN
+            );
+
+            drawRight(
+                    g,
+                    String.format("$%,.2f", currentValues[i]),
+                    411,
+                    textY,
+                    8,
+                    Font.PLAIN
+            );
+
+            drawRight(
+                    g,
+                    String.format("$%,.2f", ytdValues[i]),
+                    512,
+                    textY,
+                    8,
+                    Font.PLAIN
+            );
         }
     }
 
@@ -747,7 +985,11 @@ public class PayrollCheckGenerator {
         FontMetrics metrics = g.getFontMetrics();
         int width = metrics.stringWidth(text);
 
-        g.drawString(text, rightX - width, y);
+        g.drawString(
+                text,
+                rightX - width,
+                y
+        );
     }
 
 
@@ -770,7 +1012,11 @@ public class PayrollCheckGenerator {
         FontMetrics metrics = g.getFontMetrics();
         int width = metrics.stringWidth(text);
 
-        g.drawString(text, centerX - width / 2, y);
+        g.drawString(
+                text,
+                centerX - width / 2,
+                y
+        );
     }
 
 
@@ -788,7 +1034,12 @@ public class PayrollCheckGenerator {
 
         g.setColor(LINE);
         g.setStroke(new BasicStroke(1));
-        g.drawLine(x1, y1, x2, y2);
+        g.drawLine(
+                x1,
+                y1,
+                x2,
+                y2
+        );
     }
 
 
@@ -806,7 +1057,12 @@ public class PayrollCheckGenerator {
 
         g.setColor(LINE);
         g.setStroke(new BasicStroke(1));
-        g.drawRect(x, y, width, height);
+        g.drawRect(
+                x,
+                y,
+                width,
+                height
+        );
     }
 
 
@@ -836,7 +1092,13 @@ public class PayrollCheckGenerator {
         );
 
         g.setColor(LIGHT_LINE);
-        g.drawLine(x1, y1, x2, y2);
+
+        g.drawLine(
+                x1,
+                y1,
+                x2,
+                y2
+        );
 
         g.setStroke(oldStroke);
     }
@@ -868,7 +1130,13 @@ public class PayrollCheckGenerator {
         );
 
         g.setColor(LIGHT_LINE);
-        g.drawRect(x, y, width, height);
+
+        g.drawRect(
+                x,
+                y,
+                width,
+                height
+        );
 
         g.setStroke(oldStroke);
     }
