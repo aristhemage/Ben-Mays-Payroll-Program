@@ -9,16 +9,17 @@ on:
 
 jobs:
   build-mac:
+    # Apple Silicon Mac runner
     runs-on: macos-14
 
     steps:
-      # Get the project from GitHub
+      # Download our GitHub repository
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Install Java
+      # Install Java 21
       - name: Set up Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '21'
@@ -32,7 +33,7 @@ jobs:
             -d build/classes \
             src/*.java
 
-      # Create the JAR
+      # Create the JAR file
       - name: Create JAR
         run: |
           mkdir -p build/jar
@@ -41,13 +42,13 @@ jobs:
             src/META-INF/MANIFEST.MF \
             -C build/classes .
 
-      # Create the Mac application
+      # Create the Mac .app
       - name: Create Mac App
         run: |
           mkdir -p build/app
 
           jpackage \
-            --type app \
+            --type app-image \
             --name "Payroll Manager" \
             --input build/jar \
             --main-jar Payroll.jar \
@@ -55,13 +56,13 @@ jobs:
             --dest build/app \
             --app-version 1.0.0
 
-      # Zip the application so GitHub can provide it as a download
+      # Put the .app into a ZIP file
       - name: Zip Mac App
         run: |
           cd build/app
           zip -r "../../Payroll-Manager-Mac.zip" "Payroll Manager.app"
 
-      # Upload the finished application
+      # Make the ZIP available for download from GitHub
       - name: Upload Mac App
         uses: actions/upload-artifact@v4
         with:
