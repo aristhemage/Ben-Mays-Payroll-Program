@@ -1,0 +1,69 @@
+name: Build Mac App
+
+on:
+  push:
+    branches:
+      - main
+
+  workflow_dispatch:
+
+jobs:
+  build-mac:
+    runs-on: macos-14
+
+    steps:
+      # Get the project from GitHub
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Install Java
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      # Compile the Java source code
+      - name: Compile
+        run: |
+          mkdir -p build/classes
+
+          javac \
+            -d build/classes \
+            src/*.java
+
+      # Create the JAR
+      - name: Create JAR
+        run: |
+          mkdir -p build/jar
+
+          jar cfm build/jar/Payroll.jar \
+            src/META-INF/MANIFEST.MF \
+            -C build/classes .
+
+      # Create the Mac application
+      - name: Create Mac App
+        run: |
+          mkdir -p build/app
+
+          jpackage \
+            --type app \
+            --name "Payroll Manager" \
+            --input build/jar \
+            --main-jar Payroll.jar \
+            --main-class Main \
+            --dest build/app \
+            --app-version 1.0.0
+
+      # Zip the application so GitHub can provide it as a download
+      - name: Zip Mac App
+        run: |
+          cd build/app
+          zip -r "../../Payroll-Manager-Mac.zip" "Payroll Manager.app"
+
+      # Upload the finished application
+      - name: Upload Mac App
+        uses: actions/upload-artifact@v4
+        with:
+          name: Payroll-Manager-Mac
+          path: Payroll-Manager-Mac.zip
