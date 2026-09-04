@@ -5,6 +5,7 @@ public class Employee implements Serializable{
     public String city;
     String name;
     int num_rows = 26;
+    public String mongoId;
 
     String[] hours = new String[num_rows];
     String[] ot_hours = new String[num_rows];

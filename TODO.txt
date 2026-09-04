@@ -1,0 +1,5 @@
+- Make it so it connects to mongoDB or other database system
+- Generate visual png of overview for employee opposed to just numbers
+- Have a dedicated folder for pngs
+- Have checks be one png for all employees
+- Fix check positioning TODO: Ask for new positions

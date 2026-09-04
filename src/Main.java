@@ -1,21 +1,45 @@
 import javax.swing.SwingUtilities;
+import java.util.ArrayList;
 
 public class Main {
-
 
     public static void main(String[] args) {
 
         SwingUtilities.invokeLater(() -> {
 
-            EmployeeManager employee_manager = FileData.load();
+            try {
 
-            if(employee_manager == null) {
-                employee_manager = new EmployeeManager();
+                ArrayList<Employee> employees =
+                        PayrollAPI.getEmployees();
 
-                employee_manager.addEmployee(new Employee("Test Employee (Remove when done)", "Dummy Address", "Dummy City", "Dummy Zip #"));
+                EmployeeManager employee_manager =
+                        new EmployeeManager();
+
+                for (Employee employee : employees) {
+                    employee_manager.addEmployee(employee);
+                }
+
+                // Make sure the application has an employee
+                if (employee_manager.getEmployeeCount() == 0) {
+
+                    employee_manager.addEmployee(
+                            new Employee(
+                                    "No Employees",
+                                    "",
+                                    "",
+                                    ""
+                            )
+                    );
+                }
+
+                new PayrollGUI(employee_manager);
+
+            } catch (Exception e) {
+
+                e.printStackTrace();
+
             }
 
-            new PayrollGUI(employee_manager);
         });
 
     }

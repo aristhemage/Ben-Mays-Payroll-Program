@@ -1,6 +1,8 @@
+
 import javax.swing.*;
 import java.awt.*;
 import java.util.Map;
+import java.io.IOException;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 
@@ -211,11 +213,13 @@ public class PayrollGUI {
                         return;
                     }
 
-                    int selectedIndex = employeeSelector.getSelectedIndex();
+                    int selectedIndex =
+                            employeeSelector.getSelectedIndex();
 
                     if (
                             selectedIndex >= 0 &&
-                                    selectedIndex != employeeManager.getCurrentEmployeeIndex()
+                                    selectedIndex !=
+                                            employeeManager.getCurrentEmployeeIndex()
                     ) {
 
                         switchEmployee(selectedIndex);
@@ -238,10 +242,16 @@ public class PayrollGUI {
                             employeeManager.getCurrentEmployeeIndex();
 
                     if (current > 0) {
-                        employeeSelector.setSelectedIndex(current - 1);
+
+                        employeeSelector.setSelectedIndex(
+                                current - 1
+                        );
 
                     } else {
-                        employeeSelector.setSelectedIndex (employeeManager.getEmployeeCount()-1);
+
+                        employeeSelector.setSelectedIndex(
+                                employeeManager.getEmployeeCount() - 1
+                        );
                     }
                 }
         );
@@ -260,11 +270,18 @@ public class PayrollGUI {
                     int current =
                             employeeManager.getCurrentEmployeeIndex();
 
-                    if (current < employeeManager.getEmployeeCount() - 1) {
-                        employeeSelector.setSelectedIndex(current + 1);
-                    } else {
-                        employeeSelector.setSelectedIndex(0);
+                    if (
+                            current <
+                                    employeeManager.getEmployeeCount() - 1
+                    ) {
 
+                        employeeSelector.setSelectedIndex(
+                                current + 1
+                        );
+
+                    } else {
+
+                        employeeSelector.setSelectedIndex(0);
                     }
                 }
         );
@@ -356,17 +373,33 @@ public class PayrollGUI {
                     saveCurrentEmployee();
 
 
-                    employeeManager.addEmployee(
+                    Employee newEmployee =
                             new Employee(
                                     name.trim(),
                                     address.trim(),
                                     city.trim(),
                                     zipCode.trim()
-                            )
-                    );
+                            );
 
 
-                    FileData.save(employeeManager);
+                    employeeManager.addEmployee(newEmployee);
+
+
+                    // Save the new employee to MongoDB
+                    try {
+
+                        PayrollAPI.addEmployee(newEmployee);
+
+                    } catch (IOException error) {
+
+                        error.printStackTrace();
+
+                        JOptionPane.showMessageDialog(
+                                frame,
+                                "Employee was added locally, " +
+                                        "but could not be saved to the server."
+                        );
+                    }
 
 
                     employeeManager.setCurrentEmployeeIndex(
@@ -448,11 +481,6 @@ public class PayrollGUI {
                 }
         );
     }
-
-
-    // =========================
-    // VIEW INDIVIDUAL STATS BUTTON
-    // =========================
 
 
     // =========================
@@ -908,13 +936,36 @@ public class PayrollGUI {
 
     private void saveCurrentEmployee() {
 
-        tableManager.saveEmployee(
-                employeeManager.getCurrentEmployee()
-        );
+        Employee employee =
+                employeeManager.getCurrentEmployee();
 
-        FileData.save(employeeManager);
+        tableManager.saveEmployee(employee);
+
+        try {
+
+            PayrollAPI.updateEmployee(
+                    employee.mongoId,
+                    employee
+            );
+
+            System.out.println(
+                    "Employee saved to MongoDB: " +
+                            employee.name
+            );
+
+        } catch (IOException error) {
+
+            error.printStackTrace();
+
+            JOptionPane.showMessageDialog(
+                    frame,
+                    "Could not save " +
+                            employee.name +
+                            " to the server.\n\n" +
+                            "Your local data was not affected."
+            );
+        }
     }
-
 
     // =========================
     // UPDATE SELECTOR
