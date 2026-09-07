@@ -8,8 +8,6 @@ import java.awt.event.WindowEvent;
 
 public class PayrollGUI {
 
-    private final String version = "Alpha 2";
-
     private final EmployeeManager employeeManager;
 
     private final JFrame frame;
@@ -34,7 +32,8 @@ public class PayrollGUI {
         // FRAME
         // =========================
 
-        frame = new JFrame("Payroll System " + version);
+
+        frame = new JFrame("Payroll System Alpha " + AppVersion.VERSION);
 
         frame.setSize(1200, 700);
 
