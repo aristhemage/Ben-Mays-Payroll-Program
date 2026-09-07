@@ -291,5 +291,13 @@ async function startServer() {
     });
 }
 
+app.get("/api/version", (req, res) => {
+
+    res.json({
+        version: "1.1"
+    });
+
+});
+
 // Start application
 startServer();

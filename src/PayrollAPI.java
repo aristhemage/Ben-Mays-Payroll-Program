@@ -15,7 +15,7 @@ import java.util.ArrayList;
 
 public class PayrollAPI {
 
-    private static final String API_URL = "http://localhost:3000/api";
+    private static final String API_URL = "https://ben-mays-payroll-server.onrender.com/api";
 
     private static final Gson gson = new Gson();
 
@@ -457,6 +457,71 @@ public class PayrollAPI {
                 "Employee deleted from MongoDB: " +
                         employeeId
         );
+    }
+    // =========================
+// CHECK PROGRAM VERSION
+// =========================
+
+    public static String getLatestVersion() throws IOException {
+
+        URL url =
+                URI.create(
+                        API_URL + "/version"
+                ).toURL();
+
+        HttpURLConnection connection =
+                (HttpURLConnection) url.openConnection();
+
+        connection.setRequestMethod("GET");
+
+        connection.setRequestProperty(
+                "Accept",
+                "application/json"
+        );
+
+        int responseCode =
+                connection.getResponseCode();
+
+        if (responseCode != HttpURLConnection.HTTP_OK) {
+
+            throw new IOException(
+                    "Server returned HTTP " +
+                            responseCode
+            );
+        }
+
+        StringBuilder response =
+                new StringBuilder();
+
+        try (
+                BufferedReader reader =
+                        new BufferedReader(
+                                new InputStreamReader(
+                                        connection.getInputStream(),
+                                        StandardCharsets.UTF_8
+                                )
+                        )
+        ) {
+
+            String line;
+
+            while ((line = reader.readLine()) != null) {
+                response.append(line);
+            }
+        }
+
+        connection.disconnect();
+
+        JsonObject result =
+                JsonParser
+                        .parseString(
+                                response.toString()
+                        )
+                        .getAsJsonObject();
+
+        return result
+                .get("version")
+                .getAsString();
     }
 }
 

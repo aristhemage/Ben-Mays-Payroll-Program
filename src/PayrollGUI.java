@@ -8,7 +8,7 @@ import java.awt.event.WindowEvent;
 
 public class PayrollGUI {
 
-    private final String version = "Alpha 1";
+    private final String version = "Alpha 2";
 
     private final EmployeeManager employeeManager;
 
