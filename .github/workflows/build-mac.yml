@@ -30,6 +30,7 @@ jobs:
           mkdir -p build/classes
 
           javac \
+            -cp "lib/gson-2.13.2.jar" \
             -d build/classes \
             src/*.java
 
@@ -41,6 +42,11 @@ jobs:
           jar cfm build/jar/Payroll.jar \
             src/META-INF/MANIFEST.MF \
             -C build/classes .
+
+      # Copy Gson into the application directory
+      - name: Copy dependencies
+        run: |
+          cp lib/gson-2.13.2.jar build/jar/
 
       # Create the Mac application
       - name: Create Mac App
@@ -54,7 +60,8 @@ jobs:
             --main-jar Payroll.jar \
             --main-class Main \
             --dest build/app \
-            --app-version 1.0.0
+            --app-version 1.1 \
+            --java-options "-cp \$APPDIR/Payroll.jar:\$APPDIR/gson-2.13.2.jar"
 
       # Zip the application
       - name: Zip Mac App
