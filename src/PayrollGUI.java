@@ -5,6 +5,8 @@ import java.util.Map;
 import java.io.IOException;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.awt.Desktop;
+import java.io.File;
 
 public class PayrollGUI {
 
@@ -178,7 +180,60 @@ public class PayrollGUI {
 
         totalsManager.setupViewTotalsButton(viewTotalsButton);
 
-        totalsManager.setupViewIndividualTotalsButton(viewSingleTotalsButton);
+        viewSingleTotalsButton.addActionListener(e -> {
+
+            // Save any changes currently being edited
+            tableManager.stopEditing();
+            saveCurrentEmployee();
+
+            // Get the currently selected employee
+            Employee employee =
+                    employeeManager.getCurrentEmployee();
+
+            // Make sure an employee exists
+            if (employee == null) {
+
+                JOptionPane.showMessageDialog(
+                        frame,
+                        "No employee is currently selected."
+                );
+
+                return;
+            }
+
+            try {
+
+                // Generate a long PNG and a matching one-page PDF.
+                EmployeeTotalsReportGenerator.ReportFiles reports =
+                        EmployeeTotalsReportGenerator.generate(employee);
+
+                // Tell the user where it was saved
+                JOptionPane.showMessageDialog(
+                        frame,
+                        "Employee payroll report saved as a PDF and long PNG:\n\n"
+                                + reports.pdf.getAbsolutePath()
+                                + "\n\nPNG copy:\n"
+                                + reports.png.getAbsolutePath(),
+                        "Payroll Report Created",
+                        JOptionPane.INFORMATION_MESSAGE
+                );
+
+                // Open the PDF automatically (the preferred printable format).
+                Desktop.getDesktop().open(reports.pdf);
+
+            } catch (Exception ex) {
+
+                ex.printStackTrace();
+
+                JOptionPane.showMessageDialog(
+                        frame,
+                        "Could not create the employee payroll report:\n\n"
+                                + ex.getMessage(),
+                        "Error",
+                        JOptionPane.ERROR_MESSAGE
+                );
+            }
+        });
 
         setupMakeCheckButton(makeCheckButton);
 
@@ -324,7 +379,7 @@ public class PayrollGUI {
                     String city =
                             JOptionPane.showInputDialog(
                                     frame,
-                                    "Enter city:"
+                                    "Enter city and state:"
                             );
 
                     if (city == null || city.trim().isEmpty()) {
@@ -349,7 +404,7 @@ public class PayrollGUI {
                             "Is this information correct?\n\n" +
                                     "Name: " + name.trim() + "\n" +
                                     "Address: " + address.trim() + "\n" +
-                                    "City: " + city.trim() + "\n" +
+                                    "City/ State: " + city.trim() + "\n" +
                                     "ZIP Code: " + zipCode.trim();
 
 
@@ -579,7 +634,7 @@ public class PayrollGUI {
                     String city =
                             JOptionPane.showInputDialog(
                                     frame,
-                                    "Enter city:",
+                                    "Enter city and state:",
                                     employee.getCity()
                             );
 
