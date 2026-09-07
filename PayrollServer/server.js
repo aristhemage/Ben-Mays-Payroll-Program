@@ -201,14 +201,72 @@ app.put("/api/employees/:id", async (req, res) => {
             message: "Employee updated successfully."
         });
 
+	} catch (error) {
+
+		console.error("Error updating employee:");
+		console.error(error);
+
+		res.status(500).json({
+			success: false,
+			message: error.message
+		});
+	}
+});
+
+// Delete an employee
+app.delete("/api/employees/:id", async (req, res) => {
+
+    try {
+
+        const employeeId = req.params.id;
+
+        // Make sure the ID is a valid MongoDB ObjectId
+        if (!ObjectId.isValid(employeeId)) {
+
+            return res.status(400).json({
+                success: false,
+                message: "Invalid employee ID."
+            });
+        }
+
+        const result =
+            await database
+                .collection("employees")
+                .deleteOne({
+                    _id: new ObjectId(employeeId)
+                });
+
+        console.log(
+            "Delete result:",
+            result
+        );
+
+        if (result.deletedCount === 0) {
+
+            return res.status(404).json({
+                success: false,
+                message: "Employee not found."
+            });
+        }
+
+        console.log(
+            "Deleted employee:",
+            employeeId
+        );
+
+        res.json({
+            success: true,
+            message: "Employee deleted successfully."
+        });
+
     } catch (error) {
 
-        console.error("Error updating employee:");
+        console.error("Error deleting employee:");
         console.error(error);
 
         res.status(500).json({
             success: false,
-            message: "Could not update employee."
+            message: "Could not delete employee."
         });
     }
 });
@@ -221,7 +279,7 @@ async function startServer() {
 
     await connectToDatabase();
 
-    app.listen(PORT, () => {
+    app.listen(PORT, "0.0.0.0", () => {
 
         console.log(
             `Payroll Server running on port ${PORT}`

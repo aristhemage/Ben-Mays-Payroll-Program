@@ -385,10 +385,17 @@ public class PayrollGUI {
                     employeeManager.addEmployee(newEmployee);
 
 
-                    // Save the new employee to MongoDB
                     try {
 
-                        PayrollAPI.addEmployee(newEmployee);
+                        String mongoId =
+                                PayrollAPI.addEmployee(newEmployee);
+
+                        newEmployee.mongoId = mongoId;
+
+                        System.out.println(
+                                "New employee MongoDB ID: " +
+                                        newEmployee.mongoId
+                        );
 
                     } catch (IOException error) {
 
@@ -424,8 +431,8 @@ public class PayrollGUI {
 
 
     // =========================
-    // REMOVE EMPLOYEE
-    // =========================
+// REMOVE EMPLOYEE
+// =========================
 
     private void setupRemoveEmployeeButton(JButton button) {
 
@@ -443,8 +450,12 @@ public class PayrollGUI {
                     }
 
 
+                    Employee employee =
+                            employeeManager.getCurrentEmployee();
+
+
                     String employeeName =
-                            employeeManager.getCurrentEmployee().name;
+                            employee.name;
 
 
                     int choice =
@@ -452,9 +463,10 @@ public class PayrollGUI {
                                     frame,
                                     "Remove " +
                                             employeeName +
-                                            "? (THIS ACTION CAN NOT BE UNDONE!)",
+                                            "? (THIS ACTION CANNOT BE UNDONE!)",
                                     "Remove Employee",
-                                    JOptionPane.YES_NO_OPTION
+                                    JOptionPane.YES_NO_OPTION,
+                                    JOptionPane.WARNING_MESSAGE
                             );
 
 
@@ -463,9 +475,64 @@ public class PayrollGUI {
                     }
 
 
-                    saveCurrentEmployee();
+                    // ==========================================
+                    // SAVE CURRENT TABLE DATA
+                    // ==========================================
+
+                    tableManager.stopEditing();
+
+                    tableManager.saveEmployee(employee);
+
+
+                    // ==========================================
+                    // DELETE FROM MONGODB
+                    // ==========================================
+
+                    if (
+                            employee.mongoId != null &&
+                                    !employee.mongoId.trim().isEmpty()
+                    ) {
+
+                        try {
+
+                            PayrollAPI.deleteEmployee(
+                                    employee.mongoId
+                            );
+
+                        } catch (IOException error) {
+
+                            error.printStackTrace();
+
+                            JOptionPane.showMessageDialog(
+                                    frame,
+                                    "Could not delete " +
+                                            employeeName +
+                                            " from the server.\n\n" +
+                                            "The employee was NOT removed."
+                            );
+
+                            return;
+                        }
+                    }
+
+
+                    // ==========================================
+                    // REMOVE FROM LOCAL EMPLOYEE LIST
+                    // ==========================================
 
                     employeeManager.removeCurrentEmployee();
+
+
+                    // ==========================================
+                    // SAVE LOCAL EMPLOYEE DATA
+                    // ==========================================
+
+                    FileData.save(employeeManager);
+
+
+                    // ==========================================
+                    // UPDATE UI
+                    // ==========================================
 
                     changingEmployee = true;
 
@@ -929,10 +996,9 @@ public class PayrollGUI {
         tableManager.loadEmployee(employee);
     }
 
-
-    // =========================
-    // SAVE CURRENT EMPLOYEE
-    // =========================
+// =========================
+// SAVE CURRENT EMPLOYEE
+// =========================
 
     private void saveCurrentEmployee() {
 
@@ -940,6 +1006,25 @@ public class PayrollGUI {
                 employeeManager.getCurrentEmployee();
 
         tableManager.saveEmployee(employee);
+
+
+        // ==========================================
+        // SAVE TO MONGODB
+        // ==========================================
+
+        if (
+                employee.mongoId == null ||
+                        employee.mongoId.trim().isEmpty()
+        ) {
+
+            System.out.println(
+                    "Employee has no MongoDB ID: " +
+                            employee.name
+            );
+
+            return;
+        }
+
 
         try {
 
@@ -966,7 +1051,6 @@ public class PayrollGUI {
             );
         }
     }
-
     // =========================
     // UPDATE SELECTOR
     // =========================

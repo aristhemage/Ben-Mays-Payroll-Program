@@ -375,6 +375,76 @@ public class PayrollAPI {
                         HttpURLConnection.HTTP_OK
         ) {
 
+            StringBuilder errorResponse =
+                    new StringBuilder();
+
+            try (
+                    BufferedReader reader =
+                            new BufferedReader(
+                                    new InputStreamReader(
+                                            connection.getErrorStream(),
+                                            StandardCharsets.UTF_8
+                                    )
+                            )
+            ) {
+
+                String line;
+
+                while (
+                        (line = reader.readLine()) != null
+                ) {
+
+                    errorResponse.append(line);
+                }
+            }
+
+            connection.disconnect();
+
+            throw new IOException(
+                    "Server returned HTTP " +
+                            responseCode +
+                            ": " +
+                            errorResponse
+            );
+        }
+
+        connection.disconnect();
+    }
+
+    // =========================
+    // DELETE EMPLOYEE
+    // =========================
+
+    public static void deleteEmployee(
+            String employeeId
+    ) throws IOException {
+
+        URL url =
+                URI.create(
+                        API_URL +
+                                "/employees/" +
+                                employeeId
+                ).toURL();
+
+        HttpURLConnection connection =
+                (HttpURLConnection)
+                        url.openConnection();
+
+        connection.setRequestMethod("DELETE");
+
+        connection.setRequestProperty(
+                "Accept",
+                "application/json"
+        );
+
+        int responseCode =
+                connection.getResponseCode();
+
+        if (
+                responseCode !=
+                        HttpURLConnection.HTTP_OK
+        ) {
+
             throw new IOException(
                     "Server returned HTTP " +
                             responseCode
@@ -382,6 +452,11 @@ public class PayrollAPI {
         }
 
         connection.disconnect();
+
+        System.out.println(
+                "Employee deleted from MongoDB: " +
+                        employeeId
+        );
     }
 }
 
