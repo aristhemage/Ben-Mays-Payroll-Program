@@ -1,8 +1,18 @@
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 public class PayrollCheckGenerator {
 
@@ -29,7 +39,74 @@ public class PayrollCheckGenerator {
     // GENERATE CHECK
     // ==========================================
 
-    public static void generateCheck(
+    public static File generateChecks(
+            EmployeeManager employeeManager,
+            PayrollTableManager tableManager,
+            int selectedIndex
+    ) throws IOException {
+
+        boolean[] currentPeriod = new boolean[PayrollData.PAY_PERIODS.length];
+        currentPeriod[selectedIndex] = true;
+
+        boolean[] ytdPeriods = new boolean[PayrollData.PAY_PERIODS.length];
+        for (int period = 0; period <= selectedIndex; period++) {
+            ytdPeriods[period] = true;
+        }
+
+        List<BufferedImage> pages = new ArrayList<>();
+        String payDate = PayrollData.PAY_PERIODS[selectedIndex][3];
+        String displayPayDate = formatCheckDate(payDate);
+
+        for (Employee employee : employeeManager.getEmployees()) {
+
+            Map<String, Double> current = tableManager.calculateEmployeeTotals(employee, currentPeriod);
+            Map<String, Double> ytd = tableManager.calculateEmployeeTotals(employee, ytdPeriods);
+
+            pages.add(renderCheck(
+                    employee.name,
+                    displayPayDate,
+                    Integer.parseInt(PayrollData.PAY_PERIODS[selectedIndex][0]),
+                    PayrollData.PAY_PERIODS[selectedIndex][1],
+                    PayrollData.PAY_PERIODS[selectedIndex][2],
+                    employee.address, employee.city, employee.zip,
+                    current.get("Hours"), current.get("OT Hours"),
+                    current.get("Regular Pay"), current.get("OT Pay"),
+                    ytd.get("Regular Pay"), ytd.get("OT Pay"),
+                    current.get("Federal"), current.get("Social Security"), current.get("Medicare"), current.get("SLG Tax"),
+                    current.get("Total Deductions"), current.get("Net Pay"),
+                    ytd.get("Federal"), ytd.get("Social Security"), ytd.get("Medicare"), ytd.get("SLG Tax"),
+                    ytd.get("Total Deductions"), ytd.get("Net Pay"),
+                    current.get("Bonus"), ytd.get("Bonus")
+            ));
+        }
+
+        if (pages.isEmpty()) {
+            throw new IOException("There are no employees to include in the check PDF.");
+        }
+
+        File directory = new File(System.getProperty("user.home"), "Documents/Payroll Manager/Checks");
+        if (!directory.exists() && !directory.mkdirs()) {
+            throw new IOException("Could not create checks folder: " + directory.getAbsolutePath());
+        }
+
+        String safePayDate = payDate.replaceAll("[\\\\/:*?\"<>|]", "_");
+        File output = new File(directory, "Payroll Checks - PP " + (selectedIndex + 1) + " - " + safePayDate + ".pdf");
+        writeChecksPdf(pages, output);
+        return output;
+    }
+
+    // Matches the long check-date style shown on the approved check layout.
+    private static String formatCheckDate(String payDate) {
+
+        try {
+            LocalDate date = LocalDate.parse(payDate, DateTimeFormatter.ofPattern("M/d/yy"));
+            return date.format(DateTimeFormatter.ofPattern("MMMM d, yyyy"));
+        } catch (Exception ignored) {
+            return payDate;
+        }
+    }
+
+    private static BufferedImage renderCheck(
             String name,
             String pay_date,
             int pay_period,
@@ -231,108 +308,7 @@ public class PayrollCheckGenerator {
         g.dispose();
 
 
-        // ==========================================
-        // SAVE GENERATED CHECK
-        // ==========================================
-
-        try {
-
-            /*
-             * Store generated checks in the user's Documents folder.
-             *
-             * On Mac this becomes:
-             *
-             * ~/Documents/Payroll Manager/Checks/
-             *
-             * On Windows this becomes:
-             *
-             * C:\Users\<user>\Documents\Payroll Manager\Checks\
-             */
-
-            File checksDirectory = new File(
-                    System.getProperty("user.home"),
-                    "Documents/Payroll Manager/Checks"
-            );
-
-
-            // Create the directory if it doesn't exist
-            if (!checksDirectory.exists()) {
-
-                if (!checksDirectory.mkdirs()) {
-
-                    System.err.println(
-                            "Could not create checks directory: "
-                                    + checksDirectory.getAbsolutePath()
-                    );
-                }
-            }
-
-
-            /*
-             * Create a useful filename.
-             *
-             * Example:
-             *
-             * John Smith - PP 18 - 08-28-2026.png
-             */
-
-            String fileName =
-                    name
-                            + " - PP "
-                            + pay_period
-                            + " - "
-                            + pay_date
-                            + ".png";
-
-
-            /*
-             * Remove characters that are illegal in filenames.
-             *
-             * This is especially important because Windows does not
-             * allow characters such as:
-             *
-             * \ / : * ? " < > |
-             */
-
-            fileName = fileName.replaceAll(
-                    "[\\\\/:*?\"<>|]",
-                    "_"
-            );
-
-
-            // Create the final file
-            File outputFile = new File(
-                    checksDirectory,
-                    fileName
-            );
-
-
-            // Save the PNG
-            ImageIO.write(
-                    image,
-                    "png",
-                    outputFile
-            );
-
-
-            // Tell us exactly where the file was created
-            System.out.println(
-                    "Created check:"
-            );
-
-            System.out.println(
-                    outputFile.getAbsolutePath()
-            );
-
-
-        } catch (IOException e) {
-
-            System.err.println(
-                    "Failed to save generated check."
-            );
-
-            e.printStackTrace();
-        }
+        return image;
     }
 
 
@@ -353,8 +329,8 @@ public class PayrollCheckGenerator {
         drawRight(
                 g,
                 pay_date,
-                561,
-                49,
+                564,
+                60,
                 15,
                 Font.PLAIN
         );
@@ -363,16 +339,16 @@ public class PayrollCheckGenerator {
                 g,
                 name,
                 70,
-                83,
+                94,
                 17,
                 Font.PLAIN
         );
 
         drawRight(
                 g,
-                String.format("$%,.2f", cur_net),
-                561,
-                92,
+                String.format("%,.2f", cur_net),
+                527,
+                100,
                 16,
                 Font.BOLD
         );
@@ -380,8 +356,8 @@ public class PayrollCheckGenerator {
         drawText(
                 g,
                 NumberToWords.convert(cur_net),
-                88,
-                115,
+                54,
+                120,
                 16,
                 Font.PLAIN
         );
@@ -389,8 +365,8 @@ public class PayrollCheckGenerator {
         drawText(
                 g,
                 "PP " + pay_period + ": " + start_date + " - " + end_date,
-                45,
-                184,
+                80,
+                201,
                 16,
                 Font.PLAIN
         );
@@ -434,9 +410,9 @@ public class PayrollCheckGenerator {
     ) {
 
         int x = 21;
-        int y = 253;
+        int y = 258;
         int width = 542;
-        int height = 233;
+        int height = 223;
 
         drawBorder(g, x, y, width, height);
 
@@ -1139,5 +1115,69 @@ public class PayrollCheckGenerator {
         );
 
         g.setStroke(oldStroke);
+    }
+
+    // Writes one letter-sized PDF page per employee check.
+    private static void writeChecksPdf(List<BufferedImage> pages, File output) throws IOException {
+
+        ByteArrayOutputStream pdf = new ByteArrayOutputStream();
+        pdf.write("%PDF-1.4\n".getBytes(StandardCharsets.US_ASCII));
+
+        int pageCount = pages.size();
+        int objectCount = 4 + pageCount * 3;
+        int[] offsets = new int[objectCount + 1];
+
+        offsets[1] = pdf.size();
+        write(pdf, "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n");
+
+        StringBuilder kids = new StringBuilder();
+        for (int i = 0; i < pageCount; i++) {
+            kids.append(5 + i * 3).append(" 0 R ");
+        }
+        offsets[2] = pdf.size();
+        write(pdf, "2 0 obj\n<< /Type /Pages /Kids [" + kids + "] /Count " + pageCount + " >>\nendobj\n");
+
+        offsets[3] = pdf.size();
+        write(pdf, "3 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n");
+        offsets[4] = pdf.size();
+        write(pdf, "4 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>\nendobj\n");
+
+        for (int i = 0; i < pageCount; i++) {
+            int pageObject = 5 + i * 3;
+            int contentObject = pageObject + 1;
+            int imageObject = pageObject + 2;
+            BufferedImage page = pages.get(i);
+            ByteArrayOutputStream imageBytes = new ByteArrayOutputStream();
+            ImageIO.write(page, "jpg", imageBytes);
+            byte[] jpeg = imageBytes.toByteArray();
+
+            String content = "q\n612 0 0 792 0 0 cm\n/Im" + i + " Do\nQ\n";
+
+            offsets[pageObject] = pdf.size();
+            write(pdf, pageObject + " 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /XObject << /Im" + i + " " + imageObject + " 0 R >> >> /Contents " + contentObject + " 0 R >>\nendobj\n");
+
+            offsets[contentObject] = pdf.size();
+            write(pdf, contentObject + " 0 obj\n<< /Length " + content.getBytes(StandardCharsets.US_ASCII).length + " >>\nstream\n" + content + "endstream\nendobj\n");
+
+            offsets[imageObject] = pdf.size();
+            write(pdf, imageObject + " 0 obj\n<< /Type /XObject /Subtype /Image /Width " + page.getWidth() + " /Height " + page.getHeight() + " /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length " + jpeg.length + " >>\nstream\n");
+            pdf.write(jpeg);
+            write(pdf, "\nendstream\nendobj\n");
+        }
+
+        int xref = pdf.size();
+        write(pdf, "xref\n0 " + (objectCount + 1) + "\n0000000000 65535 f \n");
+        for (int object = 1; object <= objectCount; object++) {
+            write(pdf, String.format("%010d 00000 n \n", offsets[object]));
+        }
+        write(pdf, "trailer\n<< /Size " + (objectCount + 1) + " /Root 1 0 R >>\nstartxref\n" + xref + "\n%%EOF\n");
+
+        try (FileOutputStream stream = new FileOutputStream(output)) {
+            pdf.writeTo(stream);
+        }
+    }
+
+    private static void write(ByteArrayOutputStream output, String value) throws IOException {
+        output.write(value.getBytes(StandardCharsets.US_ASCII));
     }
 }

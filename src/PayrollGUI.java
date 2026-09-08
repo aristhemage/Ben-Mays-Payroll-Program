@@ -99,7 +99,7 @@ public class PayrollGUI {
         JButton removeEmployeeButton = new JButton("Remove Employee");
 
         JButton viewSingleTotalsButton =
-                new JButton("View Individual Employee Totals");
+                new JButton("Create PDF Report for this Employee");
 
 
         employeeControlsPanel.add(employeeNameLabel);
@@ -144,7 +144,7 @@ public class PayrollGUI {
                 new JButton("View All Employee Totals");
 
         JButton makeCheckButton =
-                new JButton("Generate Check");
+                new JButton("Generate All Checks PDF");
 
         JButton makeAddressButton =
                 new JButton("Add/Change Address");
@@ -203,23 +203,20 @@ public class PayrollGUI {
 
             try {
 
-                // Generate a long PNG and a matching one-page PDF.
-                EmployeeTotalsReportGenerator.ReportFiles reports =
-                        EmployeeTotalsReportGenerator.generate(employee);
+                // Generate the employee's printable PDF report.
+                File report = EmployeeTotalsReportGenerator.generate(employee);
 
                 // Tell the user where it was saved
                 JOptionPane.showMessageDialog(
                         frame,
-                        "Employee payroll report saved as a PDF and long PNG:\n\n"
-                                + reports.pdf.getAbsolutePath()
-                                + "\n\nPNG copy:\n"
-                                + reports.png.getAbsolutePath(),
+                        "Employee payroll report saved as a PDF:\n\n"
+                                + report.getAbsolutePath(),
                         "Payroll Report Created",
                         JOptionPane.INFORMATION_MESSAGE
                 );
 
-                // Open the PDF automatically (the preferred printable format).
-                Desktop.getDesktop().open(reports.pdf);
+                // Open the PDF automatically.
+                Desktop.getDesktop().open(report);
 
             } catch (Exception ex) {
 
@@ -873,7 +870,7 @@ public class PayrollGUI {
                 (String) JOptionPane.showInputDialog(
                         frame,
                         "Select a pay period:",
-                        "Generate Check",
+                        "Generate All Checks PDF",
                         JOptionPane.QUESTION_MESSAGE,
                         null,
                         options,
@@ -968,55 +965,34 @@ public class PayrollGUI {
         // GENERATE CHECK
         // ==========================================
 
-        PayrollCheckGenerator.generateCheck(
+        try {
 
-                // Employee information
-                employee.name,
-                payDate,
-                payPeriod,
-                startDate,
-                endDate,
-                employee.address,
-                employee.city,
-                employee.zip,
+            File checkPdf = PayrollCheckGenerator.generateChecks(
+                    employeeManager,
+                    tableManager,
+                    selectedIndex
+            );
 
-                // Current earnings
-                currentTotals.get("Hours"),
-                currentTotals.get("OT Hours"),
-                currentTotals.get("Regular Pay"),
-                currentTotals.get("OT Pay"),
+            JOptionPane.showMessageDialog(
+                    frame,
+                    "Checks generated successfully for all employees!\n\n"
+                            + "PDF: " + checkPdf.getAbsolutePath()
+            );
 
-                // YTD earnings
-                ytdTotals.get("Regular Pay"),
-                ytdTotals.get("OT Pay"),
+            Desktop.getDesktop().open(checkPdf);
 
-                // Current deductions
-                currentTotals.get("Federal"),
-                currentTotals.get("Social Security"),
-                currentTotals.get("Medicare"),
-                currentTotals.get("SLG Tax"),
-                currentTotals.get("Total Deductions"),
-                currentTotals.get("Net Pay"),
+        } catch (IOException error) {
 
-                // YTD deductions
-                ytdTotals.get("Federal"),
-                ytdTotals.get("Social Security"),
-                ytdTotals.get("Medicare"),
-                ytdTotals.get("SLG Tax"),
-                ytdTotals.get("Total Deductions"),
-                ytdTotals.get("Net Pay"),
+            error.printStackTrace();
 
-                // Current Bonus
-                currentTotals.get("Bonus"),
-                ytdTotals.get("Bonus")
-        );
-
-
-        JOptionPane.showMessageDialog(
-                frame,
-                "Check generated successfully!\n\n" +
-                        "File: GeneratedCheck.png"
-        );
+            JOptionPane.showMessageDialog(
+                    frame,
+                    "Could not create the payroll-check PDF:\n\n"
+                            + error.getMessage(),
+                    "Check Generation Error",
+                    JOptionPane.ERROR_MESSAGE
+            );
+        }
     }
 
 
