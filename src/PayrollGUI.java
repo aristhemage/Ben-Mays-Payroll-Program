@@ -5,6 +5,8 @@ import java.util.Map;
 import java.io.IOException;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.Desktop;
 import java.io.File;
 import java.time.LocalDate;
@@ -205,6 +207,22 @@ public class PayrollGUI {
 
         JMenuItem changeAddressMenuItem = new JMenuItem("Add/Change Address");
         changeAddressMenuItem.addActionListener(e -> makeAddressButton.doClick());
+
+        // A hand cursor makes it clear that these controls can be clicked.
+        setHandCursor(
+                previousButton,
+                nextButton,
+                employeeActionsButton,
+                viewSingleTotalsButton,
+                changeHourlyRateButton,
+                changeOTRateButton,
+                viewTotalsButton,
+                makeCheckButton,
+                simplifiedModeToggle,
+                addEmployeeMenuItem,
+                removeEmployeeMenuItem,
+                changeAddressMenuItem
+        );
 
         employeeActionsMenu.add(addEmployeeMenuItem);
         employeeActionsMenu.add(removeEmployeeMenuItem);
@@ -537,6 +555,8 @@ public class PayrollGUI {
                     employeeManager.addEmployee(newEmployee);
 
 
+                    setLoadingCursor(true);
+
                     try {
 
                         String mongoId =
@@ -556,8 +576,11 @@ public class PayrollGUI {
                         JOptionPane.showMessageDialog(
                                 frame,
                                 "Employee was added locally, " +
-                                        "but could not be saved to the server."
+                                "but could not be saved to the server."
                         );
+                    } finally {
+
+                        setLoadingCursor(false);
                     }
 
 
@@ -645,6 +668,8 @@ public class PayrollGUI {
                                     !employee.mongoId.trim().isEmpty()
                     ) {
 
+                        setLoadingCursor(true);
+
                         try {
 
                             PayrollAPI.deleteEmployee(
@@ -664,6 +689,9 @@ public class PayrollGUI {
                             );
 
                             return;
+                        } finally {
+
+                            setLoadingCursor(false);
                         }
                     }
 
@@ -1057,6 +1085,8 @@ public class PayrollGUI {
         // GENERATE CHECK
         // ==========================================
 
+        setLoadingCursor(true);
+
         try {
 
             File checkPdf = PayrollCheckGenerator.generateChecks(
@@ -1170,8 +1200,81 @@ public class PayrollGUI {
                     "Could not save " +
                             employee.name +
                             " to the server.\n\n" +
-                            "Your local data was not affected."
+                    "Your local data was not affected."
             );
+        } finally {
+
+            setLoadingCursor(false);
+        }
+    }
+
+    // Shows the spinning mouse cursor while the program is waiting for the cloud server.
+    private void setLoadingCursor(boolean loading) {
+
+        int cursorType = loading
+                ? Cursor.WAIT_CURSOR
+                : Cursor.DEFAULT_CURSOR;
+
+        // The glass pane sits over every button, so its waiting cursor is always visible.
+        JComponent glassPane = (JComponent) frame.getGlassPane();
+        glassPane.setCursor(Cursor.getPredefinedCursor(cursorType));
+        glassPane.setVisible(loading);
+
+        // The mouse may already be resting on the button that was clicked.
+        // Change every button directly so that cursor immediately becomes the spinning one.
+        setButtonCursors(
+                frame.getContentPane(),
+                loading ? Cursor.WAIT_CURSOR : Cursor.HAND_CURSOR
+        );
+    }
+
+    // Gives every clickable button the familiar hand cursor.
+    private void setHandCursor(AbstractButton... buttons) {
+
+        Cursor handCursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR);
+
+        for (AbstractButton button : buttons) {
+            button.setCursor(handCursor);
+
+            // Start the spinning cursor before the click action begins loading data.
+            button.addMouseListener(new MouseAdapter() {
+
+                @Override
+                public void mousePressed(MouseEvent event) {
+                    button.setCursor(
+                            Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR)
+                    );
+                }
+
+                @Override
+                public void mouseReleased(MouseEvent event) {
+                    Timer restoreHandCursor = new Timer(500, e ->
+                            button.setCursor(
+                                    Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
+                            )
+                    );
+
+                    restoreHandCursor.setRepeats(false);
+                    restoreHandCursor.start();
+                }
+            });
+        }
+    }
+
+    // Changes every visible button cursor without changing the text cursor inside table cells.
+    private void setButtonCursors(Container container, int cursorType) {
+
+        Cursor cursor = Cursor.getPredefinedCursor(cursorType);
+
+        for (Component component : container.getComponents()) {
+
+            if (component instanceof AbstractButton) {
+                component.setCursor(cursor);
+            }
+
+            if (component instanceof Container) {
+                setButtonCursors((Container) component, cursorType);
+            }
         }
     }
     // =========================
