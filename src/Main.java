@@ -26,14 +26,19 @@ public class Main {
         JFrame window = new JFrame("Payroll Manager");
 
         window.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-        window.setSize(390, 150);
+        window.setSize(440, 175);
         window.setResizable(false);
         window.setLocationRelativeTo(null);
 
         JPanel panel = new JPanel(new BorderLayout(10, 12));
         panel.setBorder(new EmptyBorder(22, 25, 22, 25));
 
-        JLabel message = new JLabel("Loading payroll data from the server...");
+        JLabel message = new JLabel(
+                "<html><div style='text-align: center;'>"
+                        + "Loading payroll data from the server...<br>"
+                        + "<strong><em>Warning:</strong> This can take up to one minute.</em>"
+                        + "</div></html>"
+        );
         message.setHorizontalAlignment(SwingConstants.CENTER);
 
         JProgressBar progressBar = new JProgressBar();
@@ -78,7 +83,9 @@ public class Main {
                     JOptionPane.showMessageDialog(
                             null,
                             "Payroll data could not be loaded.\n\n"
-                                    + "Please check your internet connection and try again.\n\n"
+                                    + "Warning: the cloud server may be waking up after being idle.\n"
+                                    + "Please wait one minute, then try again.\n\n"
+                                    + "Also check your internet connection.\n\n"
                                     + "Details: " + error.getMessage(),
                             "Unable to Start Payroll Manager :(",
                             JOptionPane.ERROR_MESSAGE

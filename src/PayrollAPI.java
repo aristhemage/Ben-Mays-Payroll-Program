@@ -19,7 +19,7 @@ public class PayrollAPI {
     private static final String API_URL = "https://ben-mays-payroll-server.onrender.com/api";
 
     // Do not leave the user on the loading screen forever if the cloud server cannot respond.
-    private static final int REQUEST_TIMEOUT_MS = 20_000;
+    private static final int REQUEST_TIMEOUT_MS = 60_000;
 
     // Converts between Java employee data and JSON text for the server.
     private static final Gson gson = new Gson();
