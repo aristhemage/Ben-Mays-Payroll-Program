@@ -6,6 +6,7 @@ public class PayrollCalculator {
 
     private double parseDouble(String value) {
 
+        // Blank table cells count as zero dollars or zero hours.
         if (value == null || value.trim().isEmpty()) {
             return 0;
         }
@@ -63,6 +64,7 @@ public class PayrollCalculator {
     // =========================
 
     public double calculateFedRate(double gross, String fed_rate) {
+        // The saved federal rate is entered as a percentage, such as 12 for 12%.
         return gross * parseDouble(fed_rate) / 100;
     }
 
@@ -105,6 +107,7 @@ public class PayrollCalculator {
 
         for (int i = 0; i < thresholds.length; i++) {
 
+            // Add the tax portion that applies above each progressive-tax threshold.
             if (gross > thresholds[i]) {
                 result += (gross - thresholds[i]) * rates[i];
             }
@@ -135,6 +138,7 @@ public class PayrollCalculator {
             double md,
             double bc) {
 
+        // Net pay is what remains after every listed withholding is removed from gross pay.
         return gross
                 - fed
                 - soc

@@ -18,6 +18,9 @@ public class PayrollAPI {
     // The online server that the payroll app talks to.
     private static final String API_URL = "https://ben-mays-payroll-server.onrender.com/api";
 
+    // Do not leave the user on the loading screen forever if the cloud server cannot respond.
+    private static final int REQUEST_TIMEOUT_MS = 20_000;
+
     // Converts between Java employee data and JSON text for the server.
     private static final Gson gson = new Gson();
 
@@ -29,11 +32,12 @@ public class PayrollAPI {
     public static ArrayList<Employee> getEmployees() throws IOException {
 
         // Ask the server for every employee saved in MongoDB.
-        URL url =
-                URI.create(API_URL + "/employees").toURL();
+        URL url = URI.create(API_URL + "/employees").toURL();
 
-        HttpURLConnection connection =
-                (HttpURLConnection) url.openConnection();
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+
+        connection.setConnectTimeout(REQUEST_TIMEOUT_MS);
+        connection.setReadTimeout(REQUEST_TIMEOUT_MS);
 
         connection.setRequestMethod("GET");
 
@@ -43,8 +47,7 @@ public class PayrollAPI {
                 "application/json"
         );
 
-        int responseCode =
-                connection.getResponseCode();
+        int responseCode = connection.getResponseCode();
 
         // Stop and report an error if the server did not answer successfully.
         if (responseCode != HttpURLConnection.HTTP_OK) {
@@ -55,8 +58,7 @@ public class PayrollAPI {
             );
         }
 
-        StringBuilder response =
-                new StringBuilder();
+        StringBuilder response = new StringBuilder();
 
         // Read the server's JSON reply into one piece of text.
         try (
@@ -131,107 +133,13 @@ public class PayrollAPI {
                             employee.mongoId
             );
 
-            // Fill in any missing payroll fields so older records do not break the app.
-            initializeEmployeeData(employee);
+            // Point the table at the payroll data for the year currently being viewed.
+            employee.activatePayrollYear(PayrollData.getActiveYear());
 
             employees.add(employee);
         }
 
         return employees;
-    }
-
-
-    // =========================
-    // INITIALIZE EMPLOYEE DATA
-    // =========================
-
-    private static void initializeEmployeeData(
-            Employee employee
-    ) {
-
-        // Create blank 26-pay-period fields when a saved employee does not have them.
-        if (employee.hours == null) {
-
-            employee.hours =
-                    new String[26];
-
-            fillArray(employee.hours);
-        }
-
-        if (employee.ot_hours == null) {
-
-            employee.ot_hours =
-                    new String[26];
-
-            fillArray(employee.ot_hours);
-        }
-
-        if (employee.hourly_rates == null) {
-
-            employee.hourly_rates =
-                    new String[26];
-
-            fillArray(employee.hourly_rates);
-        }
-
-        if (employee.hourly_rate_changed_on == null) {
-
-            employee.hourly_rate_changed_on =
-                    new String[26];
-
-            fillArray(
-                    employee.hourly_rate_changed_on
-            );
-        }
-
-        if (employee.ot_rates == null) {
-
-            employee.ot_rates =
-                    new String[26];
-
-            fillArray(employee.ot_rates);
-        }
-
-        if (employee.ot_rate_changed_on == null) {
-
-            employee.ot_rate_changed_on =
-                    new String[26];
-
-            fillArray(
-                    employee.ot_rate_changed_on
-            );
-        }
-
-        if (employee.extra == null) {
-
-            employee.extra =
-                    new String[26];
-
-            fillArray(employee.extra);
-        }
-
-        if (employee.fed_rate == null) {
-            // Use zero when no federal tax rate was saved.
-            employee.fed_rate = "0";
-        }
-    }
-
-
-    // =========================
-    // FILL ARRAY
-    // =========================
-
-    private static void fillArray(
-            String[] array
-    ) {
-
-        // Start every pay-period slot as blank instead of missing.
-        for (int i = 0;
-             i < array.length;
-             i++) {
-
-            array[i] = "";
-        }
     }
 
 
@@ -252,6 +160,9 @@ public class PayrollAPI {
         HttpURLConnection connection =
                 (HttpURLConnection)
                         url.openConnection();
+
+        connection.setConnectTimeout(REQUEST_TIMEOUT_MS);
+        connection.setReadTimeout(REQUEST_TIMEOUT_MS);
 
         connection.setRequestMethod("POST");
 
@@ -360,6 +271,9 @@ public class PayrollAPI {
                 (HttpURLConnection)
                         url.openConnection();
 
+        connection.setConnectTimeout(REQUEST_TIMEOUT_MS);
+        connection.setReadTimeout(REQUEST_TIMEOUT_MS);
+
         connection.setRequestMethod("PUT");
 
         // Tell the server that the updated employee is being sent as JSON.
@@ -456,6 +370,9 @@ public class PayrollAPI {
                 (HttpURLConnection)
                         url.openConnection();
 
+        connection.setConnectTimeout(REQUEST_TIMEOUT_MS);
+        connection.setReadTimeout(REQUEST_TIMEOUT_MS);
+
         connection.setRequestMethod("DELETE");
 
         // This request does not send employee data; the ID in the address identifies the record.
@@ -500,6 +417,9 @@ public class PayrollAPI {
 
         HttpURLConnection connection =
                 (HttpURLConnection) url.openConnection();
+
+        connection.setConnectTimeout(REQUEST_TIMEOUT_MS);
+        connection.setReadTimeout(REQUEST_TIMEOUT_MS);
 
         connection.setRequestMethod("GET");
 

@@ -8,6 +8,7 @@ public class Main {
 
     public static void main(String[] args) {
 
+        // Start the program here so the loading window opens and works properly.
         SwingUtilities.invokeLater(() -> {
 
             JFrame loadingWindow = createLoadingWindow();
@@ -19,7 +20,7 @@ public class Main {
 
     }
 
-    // Shows a window immediately so the user knows the app is working.
+    // Shows a window immediately so the user knows the app is working. Abby has no patience and spams open file.
     private static JFrame createLoadingWindow() {
 
         JFrame window = new JFrame("Payroll Manager");
@@ -46,28 +47,32 @@ public class Main {
         return window;
     }
 
-    // Loads MongoDB data away from the screen thread so the loading window stays responsive.
+    // This lets the loading screen stay visible instead of freezing when trying to load data.
     private static void loadPayrollDataInBackground(JFrame loadingWindow) {
 
         Thread loader = new Thread(() -> {
-
             try {
-
+                // Download the employees from the database and put them into the program.
                 EmployeeManager employeeManager = createEmployeeManager();
 
                 SwingUtilities.invokeLater(() -> {
 
+                    // The data is ready, so close the loading screen and open the main program.
                     loadingWindow.dispose();
                     new PayrollGUI(employeeManager);
+
+                    // Check for a newer version without interrupting the user.
                     checkForUpdatesInBackground();
                 });
 
             } catch (Exception error) {
 
+                // Print the technical error for troubleshooting.
                 error.printStackTrace();
 
                 SwingUtilities.invokeLater(() -> {
 
+                    // Close the loading screen and explain why the program could not open.
                     loadingWindow.dispose();
 
                     JOptionPane.showMessageDialog(
@@ -75,14 +80,17 @@ public class Main {
                             "Payroll data could not be loaded.\n\n"
                                     + "Please check your internet connection and try again.\n\n"
                                     + "Details: " + error.getMessage(),
-                            "Unable to Start Payroll Manager",
+                            "Unable to Start Payroll Manager :(",
                             JOptionPane.ERROR_MESSAGE
                     );
                 });
             }
         }, "Payroll Data Loader");
 
+        // If the user closes the program while data is loading, do not keep it open.
         loader.setDaemon(true);
+
+        // Begin loading the database information.
         loader.start();
     }
 
@@ -101,7 +109,7 @@ public class Main {
 
             employeeManager.addEmployee(
                     new Employee(
-                            "No Employees",
+                            "No Employees (This should not happen!)",
                             "",
                             "",
                             ""
@@ -143,6 +151,7 @@ public class Main {
         }, "Payroll Version Checker");
 
         versionChecker.setDaemon(true);
+        // Run independently so a slow version check never delays payroll work.
         versionChecker.start();
     }
 

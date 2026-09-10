@@ -9,6 +9,7 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
+// WARNING: AI-GENERATED CODE, MANUAL REVIEW AND APPROVAL BY HUMAN DONE
 
 /** Creates a sharp, one-page PDF report for one employee. */
 public final class EmployeeTotalsReportGenerator {
@@ -37,10 +38,30 @@ public final class EmployeeTotalsReportGenerator {
             throw new IllegalArgumentException("Employee cannot be null.");
         }
 
+        employee.activatePayrollYear(PayrollData.getActiveYear());
+
         File reportFolder = getReportFolder();
         File pdfFile = new File(reportFolder, buildReportFileName(employee) + ".pdf");
 
         writeVectorPdf(employee, pdfFile);
+
+        return pdfFile;
+    }
+
+    /** Creates a printable PDF containing totals for every employee in a selected time range. */
+    public static File generateAllEmployeeTotals(
+            String reportTitle,
+            Map<String, Double> totals
+    ) throws IOException {
+
+        if (totals == null) {
+            throw new IllegalArgumentException("Totals cannot be null.");
+        }
+
+        File reportFolder = getReportFolder();
+        File pdfFile = new File(reportFolder, buildAllEmployeeReportFileName(reportTitle) + ".pdf");
+
+        writeAllEmployeeTotalsPdf(reportTitle, totals, pdfFile);
 
         return pdfFile;
     }
@@ -65,6 +86,14 @@ public final class EmployeeTotalsReportGenerator {
         return safeFileName(employee.name) + "_Payroll_Totals_" + timestamp;
     }
 
+    /** Builds a unique, Windows-safe file name for an all-employee totals report. */
+    private static String buildAllEmployeeReportFileName(String reportTitle) {
+
+        String timestamp = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(new Date());
+
+        return safeFileName(reportTitle) + "_All_Employee_Totals_" + timestamp;
+    }
+
     /** Draws every part of the report as native PDF text and shapes. */
     private static void writeVectorPdf(Employee employee, File output) throws IOException {
 
@@ -80,6 +109,72 @@ public final class EmployeeTotalsReportGenerator {
 
         canvas.text(
                 "F1", 16, new Color(90, 90, 90), MARGIN, y + 25,
+                "Generated " + new SimpleDateFormat("MMMM d, yyyy h:mm a").format(new Date())
+        );
+
+        PdfDocument document = new PdfDocument();
+        document.addCatalog();
+        document.addPages();
+        document.addPage(pageWidth, pageHeight);
+        document.addPageContent(canvas.content());
+        document.addStandardFonts();
+        document.save(output);
+    }
+
+    /** Draws the selected period's combined totals for all employees as native PDF content. */
+    private static void writeAllEmployeeTotalsPdf(
+            String reportTitle,
+            Map<String, Double> totals,
+            File output
+    ) throws IOException {
+
+        int reportHeight = 720;
+        float pageWidth = REPORT_WIDTH * PDF_SCALE;
+        float pageHeight = reportHeight * PDF_SCALE;
+        PdfCanvas canvas = new PdfCanvas(pageHeight, PDF_SCALE);
+
+        int y = MARGIN;
+
+        canvas.fill(new Color(27, 67, 100), MARGIN, y, REPORT_WIDTH - MARGIN * 2, 115);
+        canvas.text("F2", 34, Color.WHITE, MARGIN + 28, y + 45, "All Employee Payroll Totals");
+        canvas.text("F1", 21, Color.WHITE, MARGIN + 28, y + 82, text(reportTitle));
+
+        y += 160;
+        drawPdfSectionTitle(canvas, "Combined Totals", y);
+        y += 48;
+
+        String[][] values = {
+                {"Total Hours", number(totals.get("Hours"))},
+                {"Total OT Hours", number(totals.get("OT Hours"))},
+                {"Regular Pay", money(totals.get("Regular Pay"))},
+                {"OT Pay", money(totals.get("OT Pay"))},
+                {"Bonus / Extra", money(totals.get("Bonus"))},
+                {"Total Gross", money(totals.get("Total Gross"))},
+                {"Federal Tax", money(totals.get("Federal"))},
+                {"Social Security", money(totals.get("Social Security"))},
+                {"Medicare", money(totals.get("Medicare"))},
+                {"Maryland Tax", money(totals.get("MD Tax"))},
+                {"Baltimore County", money(totals.get("BC Tax"))},
+                {"SLG Tax", money(totals.get("SLG Tax"))},
+                {"Total Deductions", money(totals.get("Total Deductions"))},
+                {"Net Pay", money(totals.get("Net Pay"))}
+        };
+
+        int columns = 3;
+        int boxWidth = (REPORT_WIDTH - MARGIN * 2 - 24) / columns;
+
+        for (int index = 0; index < values.length; index++) {
+
+            int x = MARGIN + (index % columns) * (boxWidth + 12);
+            int rowY = y + (index / columns) * 76;
+
+            canvas.fill(new Color(242, 246, 250), x, rowY, boxWidth, 64);
+            canvas.text("F2", 16, new Color(55, 75, 95), x + 14, rowY + 24, values[index][0]);
+            canvas.text("F1", 22, Color.BLACK, x + 14, rowY + 51, values[index][1]);
+        }
+
+        canvas.text(
+                "F1", 16, new Color(90, 90, 90), MARGIN, reportHeight - MARGIN,
                 "Generated " + new SimpleDateFormat("MMMM d, yyyy h:mm a").format(new Date())
         );
 
@@ -126,7 +221,7 @@ public final class EmployeeTotalsReportGenerator {
         String[][] values = {
                 {"Name", text(employee.name)},
                 {"Address", text(employee.address)},
-                {"City / ZIP", text(employee.city) + " " + text(employee.zip)},
+                {"City / State / ZIP", text(employee.city) + " " + text(employee.zip)},
                 {"Total Hours", number(totals.get("Hours"))},
                 {"Total OT Hours", number(totals.get("OT Hours"))},
                 {"Regular Pay", money(totals.get("Regular Pay"))},

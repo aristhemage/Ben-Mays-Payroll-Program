@@ -1,4 +1,7 @@
 import javax.swing.*;
+import java.awt.Desktop;
+import java.io.File;
+import java.io.IOException;
 import java.util.LinkedHashSet;
 import java.util.Map;
 
@@ -232,7 +235,8 @@ public class PayrollTotalsManager {
         showTotals(
                 "Totals for Pay Period " +
                         PayrollData.PAY_PERIODS[selectedIndex][0],
-                totals
+                totals,
+                individual
         );
     }
 
@@ -312,7 +316,8 @@ public class PayrollTotalsManager {
 
         showTotals(
                 "Totals for " + selected,
-                totals
+                totals,
+                individual
         );
     }
 
@@ -392,7 +397,8 @@ public class PayrollTotalsManager {
 
         showTotals(
                 "Totals for " + selected,
-                totals
+                totals,
+                individual
         );
     }
 
@@ -436,7 +442,7 @@ public class PayrollTotalsManager {
             return;
         }
 
-
+        // Mark only pay periods whose payment date falls within the selected calendar year.
         boolean[] included =
                 new boolean[
                         PayrollData.PAY_PERIODS.length
@@ -474,7 +480,8 @@ public class PayrollTotalsManager {
         showTotals(
                 selectedYear +
                         " Year To Date Totals",
-                totals
+                totals,
+                individual
         );
     }
 
@@ -683,8 +690,15 @@ public class PayrollTotalsManager {
 
     private void showTotals(
             String title,
-            Map<String, Double> totals
+            Map<String, Double> totals,
+            boolean individual
     ) {
+
+        // The all-employee view is a printable report, not a small pop-up window.
+        if (!individual) {
+            showAllEmployeeTotalsPdf(title, totals);
+            return;
+        }
 
         String message =
 
@@ -779,5 +793,40 @@ public class PayrollTotalsManager {
                 title,
                 JOptionPane.INFORMATION_MESSAGE
         );
+    }
+
+
+    // =========================
+    // CREATE ALL-EMPLOYEE PDF
+    // =========================
+
+    private void showAllEmployeeTotalsPdf(
+            String title,
+            Map<String, Double> totals
+    ) {
+
+        try {
+            // The generator writes native PDF text so totals stay clear when zoomed in.
+            File report = EmployeeTotalsReportGenerator.generateAllEmployeeTotals(title, totals);
+
+            JOptionPane.showMessageDialog(
+                    frame,
+                    "All-employee totals saved as a PDF:\n\n" + report.getAbsolutePath(),
+                    "PDF Created",
+                    JOptionPane.INFORMATION_MESSAGE
+            );
+
+            if (Desktop.isDesktopSupported()) {
+                Desktop.getDesktop().open(report);
+            }
+
+        } catch (IOException exception) {
+            JOptionPane.showMessageDialog(
+                    frame,
+                    "Could not create the all-employee totals PDF:\n" + exception.getMessage(),
+                    "PDF Error",
+                    JOptionPane.ERROR_MESSAGE
+            );
+        }
     }
 }

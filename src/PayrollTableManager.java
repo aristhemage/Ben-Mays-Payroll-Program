@@ -2,6 +2,7 @@ import javax.swing.*;
 import javax.swing.event.CellEditorListener;
 import javax.swing.event.ChangeEvent;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableColumn;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -27,6 +28,17 @@ public class PayrollTableManager {
     public static final int OT_TOTAL = 18;
     public static final int SLG_TAX = 19;
     public static final int TOTAL_DEDUCTIONS = 20;
+
+    private static final int[] COLUMN_WIDTHS = {
+            90, 115, 115, 95, 70,
+            75, 75, 90, 90, 75,
+            100, 85, 105, 80, 80, 80, 90, 95, 85, 85, 115
+    };
+
+    private static final int[] SIMPLIFIED_HIDDEN_COLUMNS = {
+            2, 3, 4, FEDERAL, SOCIAL_SECURITY, MEDICARE, MD_TAX, BC_TAX,
+            REGULAR_PAY, OT_TOTAL, SLG_TAX
+    };
 
     private final JTable table;
     private final DefaultTableModel tableModel;
@@ -122,6 +134,11 @@ public class PayrollTableManager {
 
         table = new JTable(tableModel);
 
+        // Keep columns at readable widths.  A smaller program window will scroll sideways
+        // instead of squeezing the columns and replacing their headings with "...".
+        table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+        setColumnWidths();
+
         setupValidation();
     }
 
@@ -144,6 +161,50 @@ public class PayrollTableManager {
 
     public DefaultTableModel getTableModel() {
         return tableModel;
+    }
+
+    /** Hides or restores the detailed columns without changing any employee data. */
+    public void setSimplifiedMode(boolean simplifiedMode) {
+
+        for (int columnIndex : SIMPLIFIED_HIDDEN_COLUMNS) {
+
+            TableColumn column = table.getColumnModel().getColumn(columnIndex);
+
+            if (simplifiedMode) {
+                column.setMinWidth(0);
+                column.setMaxWidth(0);
+                column.setPreferredWidth(0);
+                column.setWidth(0);
+                column.setResizable(false);
+            } else {
+                restoreColumnWidth(columnIndex);
+            }
+        }
+    }
+
+
+    // =========================
+    // TABLE COLUMN WIDTHS
+    // =========================
+
+    private void setColumnWidths() {
+
+        for (int column = 0; column < COLUMN_WIDTHS.length; column++) {
+            restoreColumnWidth(column);
+        }
+    }
+
+    /** Restores one full-table column to its normal readable width. */
+    private void restoreColumnWidth(int columnIndex) {
+
+        TableColumn column = table.getColumnModel().getColumn(columnIndex);
+        int width = COLUMN_WIDTHS[columnIndex];
+
+        column.setMinWidth(width);
+        column.setMaxWidth(Integer.MAX_VALUE);
+        column.setPreferredWidth(width);
+        column.setWidth(width);
+        column.setResizable(true);
     }
 
 
@@ -265,6 +326,7 @@ public class PayrollTableManager {
 
     private void calculateAllRows() {
 
+        // Finish the user's current edit before recalculating values from the table.
         stopEditing();
 
         for (int row = 0; row < tableModel.getRowCount(); row++) {
@@ -314,6 +376,7 @@ public class PayrollTableManager {
                 baltimore
         );
 
+        // SLG is shown as the combined Maryland and Baltimore County tax amount.
         double slg = maryland + baltimore;
         double deductions = totalGross - net;
 
@@ -337,6 +400,7 @@ public class PayrollTableManager {
 
     public void loadEmployee(Employee employee) {
 
+        // Remove the previous employee's rows before filling the table for this employee.
         tableModel.setRowCount(0);
 
         fedRateField.setText(employee.fed_rate);
@@ -387,6 +451,7 @@ public class PayrollTableManager {
 
         employee.fed_rate = fedRateField.getText().trim();
 
+        // Calculated columns are rebuilt on load, so only editable inputs are stored here.
         for (int i = 0; i < tableModel.getRowCount(); i++) {
 
             employee.hours[i] = getValue(i, HOURS);
@@ -504,6 +569,9 @@ public class PayrollTableManager {
             boolean[] includedPayPeriods
     ) {
 
+        // Reports and checks always calculate from the year currently selected in the table.
+        employee.activatePayrollYear(PayrollData.getActiveYear());
+
         for (int i = 0; i < PayrollData.PAY_PERIODS.length; i++) {
 
             if (!includedPayPeriods[i]) {
@@ -615,6 +683,7 @@ public class PayrollTableManager {
 
     private double getNumber(String value) {
 
+        // Empty cells count as zero so one blank field cannot stop totals from being calculated.
         if (value == null || value.trim().isEmpty()) {
             return 0;
         }

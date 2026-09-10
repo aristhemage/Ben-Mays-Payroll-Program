@@ -59,6 +59,9 @@ public class PayrollCheckGenerator {
 
         for (Employee employee : employeeManager.getEmployees()) {
 
+            // A combined check run must use each employee's data from the selected payroll year.
+            employee.activatePayrollYear(PayrollData.getActiveYear());
+
             Map<String, Double> current = tableManager.calculateEmployeeTotals(employee, currentPeriod);
             Map<String, Double> ytd = tableManager.calculateEmployeeTotals(employee, ytdPeriods);
 
@@ -203,20 +206,6 @@ public class PayrollCheckGenerator {
                 cur_net
         );
 
-
-        // ==========================================
-        // FIRST TEAR LINE
-        // ==========================================
-
-        drawDashedLine(
-                g,
-                22,
-                245,
-                565,
-                245
-        );
-
-
         // ==========================================
         // TOP EARNINGS STATEMENT
         // ==========================================
@@ -252,20 +241,6 @@ public class PayrollCheckGenerator {
                 bonus,
                 ytd_bonus
         );
-
-
-        // ==========================================
-        // SECOND TEAR LINE
-        // ==========================================
-
-        drawDashedLine(
-                g,
-                22,
-                491,
-                565,
-                491
-        );
-
 
         // ==========================================
         // BOTTOM EARNINGS STATEMENT
@@ -329,17 +304,17 @@ public class PayrollCheckGenerator {
         drawRight(
                 g,
                 pay_date,
-                564,
-                60,
-                15,
+                567,
+                65,
+                12,
                 Font.PLAIN
         );
 
         drawText(
                 g,
                 name,
-                70,
-                94,
+                110,
+                100,
                 17,
                 Font.PLAIN
         );
@@ -366,7 +341,7 @@ public class PayrollCheckGenerator {
                 g,
                 "PP " + pay_period + ": " + start_date + " - " + end_date,
                 80,
-                201,
+                184,
                 16,
                 Font.PLAIN
         );
@@ -412,7 +387,7 @@ public class PayrollCheckGenerator {
         int x = 21;
         int y = 258;
         int width = 542;
-        int height = 223;
+        int height = 221;
 
         drawBorder(g, x, y, width, height);
 
@@ -1041,45 +1016,6 @@ public class PayrollCheckGenerator {
         );
     }
 
-
-    // ==========================================
-    // DASHED LINE
-    // ==========================================
-
-    private static void drawDashedLine(
-            Graphics2D g,
-            int x1,
-            int y1,
-            int x2,
-            int y2
-    ) {
-
-        Stroke oldStroke = g.getStroke();
-
-        g.setStroke(
-                new BasicStroke(
-                        1,
-                        BasicStroke.CAP_BUTT,
-                        BasicStroke.JOIN_MITER,
-                        10,
-                        new float[]{3, 3},
-                        0
-                )
-        );
-
-        g.setColor(LIGHT_LINE);
-
-        g.drawLine(
-                x1,
-                y1,
-                x2,
-                y2
-        );
-
-        g.setStroke(oldStroke);
-    }
-
-
     // ==========================================
     // LIGHT DASHED BOX
     // ==========================================
@@ -1124,6 +1060,7 @@ public class PayrollCheckGenerator {
         pdf.write("%PDF-1.4\n".getBytes(StandardCharsets.US_ASCII));
 
         int pageCount = pages.size();
+        // Each check requires a page object, its drawing commands, and its embedded image.
         int objectCount = 4 + pageCount * 3;
         int[] offsets = new int[objectCount + 1];
 
@@ -1131,6 +1068,7 @@ public class PayrollCheckGenerator {
         write(pdf, "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n");
 
         StringBuilder kids = new StringBuilder();
+        // This list connects the PDF's page collection to every employee check page.
         for (int i = 0; i < pageCount; i++) {
             kids.append(5 + i * 3).append(" 0 R ");
         }
@@ -1147,6 +1085,7 @@ public class PayrollCheckGenerator {
             int contentObject = pageObject + 1;
             int imageObject = pageObject + 2;
             BufferedImage page = pages.get(i);
+            // Keep the check artwork compact by embedding it as a JPEG image.
             ByteArrayOutputStream imageBytes = new ByteArrayOutputStream();
             ImageIO.write(page, "jpg", imageBytes);
             byte[] jpeg = imageBytes.toByteArray();
@@ -1166,6 +1105,7 @@ public class PayrollCheckGenerator {
         }
 
         int xref = pdf.size();
+        // PDF readers use this index to find every object in the finished document.
         write(pdf, "xref\n0 " + (objectCount + 1) + "\n0000000000 65535 f \n");
         for (int object = 1; object <= objectCount; object++) {
             write(pdf, String.format("%010d 00000 n \n", offsets[object]));

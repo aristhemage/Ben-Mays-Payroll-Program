@@ -7,6 +7,7 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.Desktop;
 import java.io.File;
+import java.time.LocalDate;
 
 public class PayrollGUI {
 
@@ -14,11 +15,13 @@ public class PayrollGUI {
 
     private final JFrame frame;
     private final JComboBox<String> employeeSelector;
+    private final JComboBox<String> payrollYearSelector;
     private final JLabel employeeNameLabel;
 
     private final PayrollTableManager tableManager;
 
     private boolean changingEmployee = false;
+    private boolean changingPayrollYear = false;
 
 
     // =========================
@@ -90,6 +93,9 @@ public class PayrollGUI {
 
         employeeSelector = new JComboBox<>();
 
+        payrollYearSelector = new JComboBox<>(getPayrollYearOptions());
+        payrollYearSelector.setSelectedItem(String.valueOf(PayrollData.getActiveYear()));
+
         JButton previousButton = new JButton("< Previous");
 
         JButton nextButton = new JButton("Next >");
@@ -98,16 +104,19 @@ public class PayrollGUI {
 
         JButton removeEmployeeButton = new JButton("Remove Employee");
 
+        JButton employeeActionsButton = new JButton("Employee Actions");
+
         JButton viewSingleTotalsButton =
                 new JButton("Create PDF Report for this Employee");
 
 
         employeeControlsPanel.add(employeeNameLabel);
         employeeControlsPanel.add(employeeSelector);
+        employeeControlsPanel.add(new JLabel("Payroll Year:"));
+        employeeControlsPanel.add(payrollYearSelector);
         employeeControlsPanel.add(previousButton);
         employeeControlsPanel.add(nextButton);
-        employeeControlsPanel.add(addEmployeeButton);
-        employeeControlsPanel.add(removeEmployeeButton);
+        employeeControlsPanel.add(employeeActionsButton);
         employeeControlsPanel.add(viewSingleTotalsButton);
 
 
@@ -124,6 +133,11 @@ public class PayrollGUI {
 
         JScrollPane scrollPane =
                 new JScrollPane(tableManager.getTable());
+
+        // Keep the full-width payroll table readable in narrow windows.
+        scrollPane.setHorizontalScrollBarPolicy(
+                ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED
+        );
 
         frame.add(scrollPane, BorderLayout.CENTER);
 
@@ -149,12 +163,15 @@ public class PayrollGUI {
         JButton makeAddressButton =
                 new JButton("Add/Change Address");
 
+        JCheckBox simplifiedModeToggle =
+                new JCheckBox("Simplified Mode");
+
 
         bottomPanel.add(changeHourlyRateButton);
         bottomPanel.add(changeOTRateButton);
         bottomPanel.add(viewTotalsButton);
         bottomPanel.add(makeCheckButton);
-        bottomPanel.add(makeAddressButton);
+        bottomPanel.add(simplifiedModeToggle);
 
 
         frame.add(bottomPanel, BorderLayout.SOUTH);
@@ -166,6 +183,8 @@ public class PayrollGUI {
 
         setupEmployeeSelector();
 
+        setupPayrollYearSelector();
+
         setupPreviousButton(previousButton);
 
         setupNextButton(nextButton);
@@ -173,6 +192,29 @@ public class PayrollGUI {
         setupAddEmployeeButton(addEmployeeButton);
 
         setupRemoveEmployeeButton(removeEmployeeButton);
+
+        JPopupMenu employeeActionsMenu = new JPopupMenu();
+
+        // Keep employee-management tasks together without using several permanent buttons.
+
+        JMenuItem addEmployeeMenuItem = new JMenuItem("Add Employee");
+        addEmployeeMenuItem.addActionListener(e -> addEmployeeButton.doClick());
+
+        JMenuItem removeEmployeeMenuItem = new JMenuItem("Remove Employee");
+        removeEmployeeMenuItem.addActionListener(e -> removeEmployeeButton.doClick());
+
+        JMenuItem changeAddressMenuItem = new JMenuItem("Add/Change Address");
+        changeAddressMenuItem.addActionListener(e -> makeAddressButton.doClick());
+
+        employeeActionsMenu.add(addEmployeeMenuItem);
+        employeeActionsMenu.add(removeEmployeeMenuItem);
+        employeeActionsMenu.add(changeAddressMenuItem);
+
+        employeeActionsButton.addActionListener(e -> employeeActionsMenu.show(
+                employeeActionsButton,
+                0,
+                employeeActionsButton.getHeight()
+        ));
 
         setupHourlyRateButton(changeHourlyRateButton);
 
@@ -236,6 +278,13 @@ public class PayrollGUI {
 
         setupMakeAddressButton(makeAddressButton);
 
+        simplifiedModeToggle.addActionListener(
+                // Simplified mode changes the table view only; every payroll value remains saved.
+                e -> tableManager.setSimplifiedMode(
+                        simplifiedModeToggle.isSelected()
+                )
+        );
+
 
         // =========================
         // INITIAL SETUP
@@ -277,6 +326,58 @@ public class PayrollGUI {
                     }
                 }
         );
+    }
+
+
+    // =========================
+    // PAYROLL YEAR SELECTOR
+    // =========================
+
+    private void setupPayrollYearSelector() {
+
+        payrollYearSelector.addActionListener(e -> {
+
+            if (changingPayrollYear) {
+                return;
+            }
+
+            int selectedYear;
+
+            try {
+                selectedYear = Integer.parseInt((String) payrollYearSelector.getSelectedItem());
+            } catch (NumberFormatException exception) {
+                return;
+            }
+
+            if (selectedYear == PayrollData.getActiveYear()) {
+                return;
+            }
+
+            // Store edits under the old year before displaying the new year's blank or saved rows.
+            tableManager.stopEditing();
+            saveCurrentEmployee();
+
+            PayrollData.setActiveYear(selectedYear);
+
+            for (Employee employee : employeeManager.getEmployees()) {
+                employee.activatePayrollYear(selectedYear);
+            }
+
+            loadCurrentEmployee();
+        });
+    }
+
+    /** Offers the original 2026 records plus several future payroll years. */
+    private String[] getPayrollYearOptions() {
+
+        int lastYear = Math.max(2027, LocalDate.now().getYear() + 3);
+        String[] years = new String[lastYear - 2026 + 1];
+
+        for (int year = 2026; year <= lastYear; year++) {
+            years[year - 2026] = String.valueOf(year);
+        }
+
+        return years;
     }
 
 
@@ -401,7 +502,7 @@ public class PayrollGUI {
                             "Is this information correct?\n\n" +
                                     "Name: " + name.trim() + "\n" +
                                     "Address: " + address.trim() + "\n" +
-                                    "City/ State: " + city.trim() + "\n" +
+                                    "City / State/ State: " + city.trim() + "\n" +
                                     "ZIP Code: " + zipCode.trim();
 
 
@@ -573,14 +674,6 @@ public class PayrollGUI {
 
                     employeeManager.removeCurrentEmployee();
 
-
-                    // ==========================================
-                    // SAVE LOCAL EMPLOYEE DATA
-                    // ==========================================
-
-                    FileData.save(employeeManager);
-
-
                     // ==========================================
                     // UPDATE UI
                     // ==========================================
@@ -658,9 +751,8 @@ public class PayrollGUI {
                     employee.setCity(city.trim());
                     employee.setZipCode(zipCode.trim());
 
-
-                    // Save to File
-                    FileData.save(employeeManager);
+                    // Address changes now use the same cloud save as every other employee update.
+                    saveCurrentEmployee();
                 }
         );
     }
@@ -1002,6 +1094,7 @@ public class PayrollGUI {
 
     private void switchEmployee(int newEmployeeIndex) {
 
+        // Save the current table before replacing it with another employee's data.
         saveCurrentEmployee();
 
         employeeManager.setCurrentEmployeeIndex(newEmployeeIndex);
@@ -1087,6 +1180,7 @@ public class PayrollGUI {
 
     private void updateEmployeeSelector() {
 
+        // Rebuild the list after an employee has been added or removed.
         employeeSelector.removeAllItems();
 
 

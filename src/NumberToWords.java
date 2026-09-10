@@ -14,6 +14,7 @@ public class NumberToWords {
 
     public static String convert(double amount) {
 
+        // A check prints its amount as whole dollars plus a two-digit cents fraction.
         int dollars = (int) amount;
 
         int cents = (int) Math.round((amount - dollars) * 100);
@@ -33,6 +34,7 @@ public class NumberToWords {
 
     private static String convertNumber(long number) {
 
+        // Build the words in groups, from the smallest values up to thousands.
         if (number == 0) {
             return "Zero";
         }
