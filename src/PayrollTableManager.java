@@ -137,6 +137,10 @@ public class PayrollTableManager {
         // Keep columns at readable widths.  A smaller program window will scroll sideways
         // instead of squeezing the columns and replacing their headings with "...".
         table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+
+        // Keep each column in its correct spot so users cannot drag the headings into a different order.
+        table.getTableHeader().setReorderingAllowed(false);
+
         setColumnWidths();
 
         setupValidation();
