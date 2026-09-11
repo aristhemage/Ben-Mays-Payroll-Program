@@ -520,7 +520,7 @@ public class PayrollGUI {
                             "Is this information correct?\n\n" +
                                     "Name: " + name.trim() + "\n" +
                                     "Address: " + address.trim() + "\n" +
-                                    "City / State/ State: " + city.trim() + "\n" +
+                                    "City / State: " + city.trim() + "\n" +
                                     "ZIP Code: " + zipCode.trim();
 
 
