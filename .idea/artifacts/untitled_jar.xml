@@ -3,6 +3,8 @@
     <output-path>$PROJECT_DIR$/out/artifacts/untitled_jar</output-path>
     <root id="archive" name="untitled.jar">
       <element id="module-output" name="untitled" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/lib/gson-2.13.2.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/lib/error_prone_annotations-2.41.0.jar" path-in-jar="/" />
     </root>
   </artifact>
 </component>
