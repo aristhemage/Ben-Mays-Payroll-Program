@@ -12,8 +12,39 @@ const app = express();
 // Enable CORS
 app.use(cors());
 
-// Allow JSON request bodies
-app.use(express.json());
+// Allow JSON request bodies, including a complete payroll backup file.
+app.use(express.json({ limit: "5mb" }));
+
+// These default login details work until you set PAYROLL_USERNAME and PAYROLL_PASSWORD in Render.
+const payrollUsername = process.env.PAYROLL_USERNAME || "worker";
+const payrollPassword = process.env.PAYROLL_PASSWORD || "payroll";
+
+// Require the payroll login before allowing any person or program to use the API.
+app.use("/api", (req, res, next) => {
+
+    const authorization = req.headers.authorization || "";
+
+    if (!authorization.startsWith("Basic ")) {
+        return res.status(401).json({
+            success: false,
+            message: "Payroll login is required."
+        });
+    }
+
+    const [username, password] = Buffer
+            .from(authorization.substring(6), "base64")
+            .toString("utf8")
+            .split(":");
+
+    if (username !== payrollUsername || password !== payrollPassword) {
+        return res.status(401).json({
+            success: false,
+            message: "Incorrect payroll username or password."
+        });
+    }
+
+    next();
+});
 
 // Log incoming requests
 app.use((req, res, next) => {
@@ -85,6 +116,63 @@ app.get("/api/employees", async (req, res) => {
             success: false,
             message: "Could not retrieve employees."
         });
+    }
+});
+
+// Replace every cloud employee record with the employees stored in one backup file.
+app.post("/api/backups/restore", async (req, res) => {
+
+    const restoredEmployees = req.body;
+
+    if (!Array.isArray(restoredEmployees) || restoredEmployees.length === 0) {
+        return res.status(400).json({
+            success: false,
+            message: "A backup must contain at least one employee."
+        });
+    }
+
+    if (restoredEmployees.some(employee =>
+            !employee || typeof employee !== "object" || Array.isArray(employee))) {
+
+        return res.status(400).json({
+            success: false,
+            message: "The backup file has an invalid employee record."
+        });
+    }
+
+    // Restored employees receive new MongoDB IDs. Old IDs must never be inserted again.
+    const employeesToRestore = restoredEmployees.map(({ _id, mongoId, ...employee }) => employee);
+    const session = client.startSession();
+
+    try {
+
+        // A transaction means MongoDB restores every employee or leaves the old data untouched.
+        await session.withTransaction(async () => {
+            const employees = database.collection("employees");
+
+            await employees.deleteMany({}, { session });
+            await employees.insertMany(employeesToRestore, { session });
+        });
+
+        console.log("Restored payroll backup with", employeesToRestore.length, "employees.");
+
+        res.json({
+            success: true,
+            restoredEmployees: employeesToRestore.length
+        });
+
+    } catch (error) {
+
+        console.error("Error restoring payroll backup:");
+        console.error(error);
+
+        res.status(500).json({
+            success: false,
+            message: "Could not restore the backup."
+        });
+
+    } finally {
+        await session.endSession();
     }
 });
 

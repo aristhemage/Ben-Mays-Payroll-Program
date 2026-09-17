@@ -1,6 +1,7 @@
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.BorderLayout;
+import java.awt.GridLayout;
 import java.io.IOException;
 import java.util.ArrayList;
 
@@ -11,6 +12,11 @@ public class Main {
         // Start the program here so the loading window opens and works properly.
         SwingUtilities.invokeLater(() -> {
 
+            if (!showLoginWindow()) {
+                System.exit(0);
+                return;
+            }
+
             JFrame loadingWindow = createLoadingWindow();
             loadingWindow.setVisible(true);
 
@@ -18,6 +24,51 @@ public class Main {
 
         });
 
+    }
+
+    /** Asks for the payroll login before the program downloads any cloud data. */
+    private static boolean showLoginWindow() {
+
+        JPanel panel = new JPanel(new GridLayout(2, 2, 8, 8));
+        JTextField usernameField = new JTextField();
+        JPasswordField passwordField = new JPasswordField();
+
+        panel.add(new JLabel("Username:"));
+        panel.add(usernameField);
+        panel.add(new JLabel("Password:"));
+        panel.add(passwordField);
+
+        while (true) {
+
+            int choice = JOptionPane.showConfirmDialog(
+                    null,
+                    panel,
+                    "Payroll Manager Login",
+                    JOptionPane.OK_CANCEL_OPTION,
+                    JOptionPane.PLAIN_MESSAGE
+            );
+
+            if (choice != JOptionPane.OK_OPTION) {
+                return false;
+            }
+
+            String username = usernameField.getText().trim();
+            String password = new String(passwordField.getPassword());
+
+            if ("worker".equals(username) && "payroll".equals(password)) {
+                PayrollAPI.setCredentials(username, password);
+                return true;
+            }
+
+            JOptionPane.showMessageDialog(
+                    null,
+                    "Incorrect username or password.",
+                    "Login Failed",
+                    JOptionPane.ERROR_MESSAGE
+            );
+
+            passwordField.setText("");
+        }
     }
 
     // Shows a window immediately so the user knows the app is working. Abby has no patience and spams open file.

@@ -3,7 +3,7 @@ import java.util.ArrayList;
 public class EmployeeManager {
 
     // Make a list of employees of type Employee.
-    private final ArrayList<Employee> employees = new ArrayList<>();
+    private static final ArrayList<Employee> employees = new ArrayList<>();
 
     private int current_employee_index = 0;
 
@@ -42,7 +42,7 @@ public class EmployeeManager {
     // BASIC GETTERS
     // =========================
 
-    public ArrayList<Employee> getEmployees() {
+    public static ArrayList<Employee> getEmployees() {
         return employees;
     }
 

@@ -9,6 +9,8 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.Desktop;
 import java.io.File;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.time.LocalDate;
 
 public class PayrollGUI {
@@ -154,6 +156,8 @@ public class PayrollGUI {
 
         JButton massChangeButton = new JButton("Mass Change");
 
+        JButton uploadBackupButton = new JButton("Upload Backup");
+
         JButton viewTotalsButton =
                 new JButton("View All Employee Totals");
 
@@ -168,6 +172,7 @@ public class PayrollGUI {
 
 
         bottomPanel.add(massChangeButton);
+        bottomPanel.add(uploadBackupButton);
         bottomPanel.add(simplifiedModeToggle);
 
 
@@ -258,6 +263,7 @@ public class PayrollGUI {
                 employeeActionsButton,
                 reportsAndChecksButton,
                 massChangeButton,
+                uploadBackupButton,
                 simplifiedModeToggle,
                 addEmployeeMenuItem,
                 removeEmployeeMenuItem,
@@ -281,6 +287,8 @@ public class PayrollGUI {
         ));
 
         totalsManager.setupViewTotalsButton(viewTotalsButton);
+
+        setupUploadBackupButton(uploadBackupButton);
 
         viewSingleTotalsButton.addActionListener(e -> {
 
@@ -829,6 +837,88 @@ public class PayrollGUI {
 
 
     // =========================
+    // UPLOAD BACKUP
+    // =========================
+
+    /** Lets the user choose a backup file and replace the shared cloud payroll data with it. */
+    private void setupUploadBackupButton(JButton button) {
+
+        button.addActionListener(e -> {
+
+            JFileChooser fileChooser = new JFileChooser();
+            fileChooser.setDialogTitle("Choose a Payroll Backup File");
+            fileChooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter(
+                    "Payroll Backup Files (*.json)",
+                    "json"
+            ));
+
+            if (fileChooser.showOpenDialog(frame) != JFileChooser.APPROVE_OPTION) {
+                return;
+            }
+
+            File backupFile = fileChooser.getSelectedFile();
+
+            int confirmation = JOptionPane.showConfirmDialog(
+                    frame,
+                    "WARNING: This will replace the payroll data in MongoDB for everyone.\n\n"
+                            + "All current cloud employee records will be replaced by:\n"
+                            + backupFile.getName() + "\n\n"
+                            + "Everyone using Payroll Manager must restart afterward.\n\n"
+                            + "Do you want to continue?",
+                    "Restore Backup for Everyone?",
+                    JOptionPane.YES_NO_OPTION,
+                    JOptionPane.WARNING_MESSAGE
+            );
+
+            if (confirmation != JOptionPane.YES_OPTION) {
+                return;
+            }
+
+            try {
+
+                String backupText = Files.readString(
+                        backupFile.toPath(),
+                        StandardCharsets.UTF_8
+                );
+
+                setLoadingCursor(true);
+                PayrollAPI.restoreBackup(backupText);
+
+                JOptionPane.showMessageDialog(
+                        frame,
+                        "The backup was restored for everyone.\n\n"
+                                + "Payroll Manager will now close so this computer does not save old data "
+                                + "over the restored backup. Please reopen it.",
+                        "Backup Restored",
+                        JOptionPane.INFORMATION_MESSAGE
+                );
+
+                // Do not save the old employee currently shown on screen after a restore.
+                frame.dispose();
+                System.exit(0);
+
+            } catch (Exception error) {
+
+                error.printStackTrace();
+
+                JOptionPane.showMessageDialog(
+                        frame,
+                        "The backup could not be restored.\n\n"
+                                + "The current cloud data was not changed.\n\n"
+                                + "Details: " + error.getMessage(),
+                        "Backup Restore Failed",
+                        JOptionPane.ERROR_MESSAGE
+                );
+
+            } finally {
+
+                setLoadingCursor(false);
+            }
+        });
+    }
+
+
+    // =========================
     // MASS CHANGE MENU
     // =========================
 
@@ -1206,11 +1296,29 @@ public class PayrollGUI {
                     employee
             );
 
+            // The cloud save worked, so make a local backup of every employee.
+            try {
+
+                BackupManager.createBackup(
+                        employeeManager.getEmployees()
+                );
+
+            } catch (IOException backupError) {
+
+                backupError.printStackTrace();
+
+                JOptionPane.showMessageDialog(
+                        frame,
+                        "Your payroll data was saved to the cloud, "
+                                + "but the local backup could not be created."
+                );
+            }
+
             System.out.println(
                     "Employee saved to MongoDB: " +
                             employee.name
             );
-
+            
         } catch (IOException error) {
 
             error.printStackTrace();

@@ -12,6 +12,7 @@ import java.net.URI;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Base64;
 
 public class PayrollAPI {
 
@@ -23,6 +24,25 @@ public class PayrollAPI {
 
     // Converts between Java employee data and JSON text for the server.
     private static final Gson gson = new Gson();
+
+    private static String username = "worker";
+    private static String password = "payroll";
+
+    /** Stores the login entered at program startup so every cloud request can prove who is using it. */
+    public static void setCredentials(String enteredUsername, String enteredPassword) {
+        username = enteredUsername;
+        password = enteredPassword;
+    }
+
+    // Adds the username and password to one request without displaying them in the address bar.
+    private static void addLoginHeader(HttpURLConnection connection) {
+        String login = username + ":" + password;
+        String encodedLogin = Base64.getEncoder().encodeToString(
+                login.getBytes(StandardCharsets.UTF_8)
+        );
+
+        connection.setRequestProperty("Authorization", "Basic " + encodedLogin);
+    }
 
 
     // =========================
@@ -40,6 +60,7 @@ public class PayrollAPI {
         connection.setReadTimeout(REQUEST_TIMEOUT_MS);
 
         connection.setRequestMethod("GET");
+        addLoginHeader(connection);
 
         // Tell the server that this app expects JSON data back.
         connection.setRequestProperty(
@@ -165,6 +186,7 @@ public class PayrollAPI {
         connection.setReadTimeout(REQUEST_TIMEOUT_MS);
 
         connection.setRequestMethod("POST");
+        addLoginHeader(connection);
 
         // Tell the server that the employee data is being sent as JSON.
         connection.setRequestProperty(
@@ -275,6 +297,7 @@ public class PayrollAPI {
         connection.setReadTimeout(REQUEST_TIMEOUT_MS);
 
         connection.setRequestMethod("PUT");
+        addLoginHeader(connection);
 
         // Tell the server that the updated employee is being sent as JSON.
         connection.setRequestProperty(
@@ -374,6 +397,7 @@ public class PayrollAPI {
         connection.setReadTimeout(REQUEST_TIMEOUT_MS);
 
         connection.setRequestMethod("DELETE");
+        addLoginHeader(connection);
 
         // This request does not send employee data; the ID in the address identifies the record.
         connection.setRequestProperty(
@@ -403,6 +427,41 @@ public class PayrollAPI {
                         employeeId
         );
     }
+
+    // =========================
+    // RESTORE BACKUP
+    // =========================
+
+    /** Sends one complete local backup to the server and replaces every cloud employee record. */
+    public static void restoreBackup(String backupJson) throws IOException {
+
+        if (!JsonParser.parseString(backupJson).isJsonArray()) {
+            throw new IOException("The selected file is not a payroll backup file.");
+        }
+
+        URL url = URI.create(API_URL + "/backups/restore").toURL();
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+
+        connection.setConnectTimeout(REQUEST_TIMEOUT_MS);
+        connection.setReadTimeout(REQUEST_TIMEOUT_MS);
+        connection.setRequestMethod("POST");
+        addLoginHeader(connection);
+        connection.setRequestProperty("Content-Type", "application/json");
+        connection.setRequestProperty("Accept", "application/json");
+        connection.setDoOutput(true);
+
+        try (var outputStream = connection.getOutputStream()) {
+            outputStream.write(backupJson.getBytes(StandardCharsets.UTF_8));
+        }
+
+        int responseCode = connection.getResponseCode();
+        connection.disconnect();
+
+        if (responseCode != HttpURLConnection.HTTP_OK) {
+            throw new IOException("Server returned HTTP " + responseCode);
+        }
+    }
+
     // =========================
     // CHECK PROGRAM VERSION
     // =========================
@@ -422,6 +481,7 @@ public class PayrollAPI {
         connection.setReadTimeout(REQUEST_TIMEOUT_MS);
 
         connection.setRequestMethod("GET");
+        addLoginHeader(connection);
 
         // Tell the server that this app expects JSON data back.
         connection.setRequestProperty(
