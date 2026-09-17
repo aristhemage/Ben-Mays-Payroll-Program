@@ -55,15 +55,15 @@ public class Main {
             String username = usernameField.getText().trim();
             String password = new String(passwordField.getPassword());
 
-            if ("worker".equals(username) && "payroll".equals(password)) {
+            if (!username.isEmpty() && !password.isEmpty()) {
                 PayrollAPI.setCredentials(username, password);
                 return true;
             }
 
             JOptionPane.showMessageDialog(
                     null,
-                    "Incorrect username or password.",
-                    "Login Failed",
+                    "Please enter both a username and password.",
+                    "Missing Login Details",
                     JOptionPane.ERROR_MESSAGE
             );
 

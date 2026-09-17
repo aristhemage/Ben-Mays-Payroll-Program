@@ -25,8 +25,9 @@ public class PayrollAPI {
     // Converts between Java employee data and JSON text for the server.
     private static final Gson gson = new Gson();
 
-    private static String username = "worker";
-    private static String password = "payroll";
+    // These exist only while the program is open; no login is saved in the Java source or on disk.
+    private static String username;
+    private static String password;
 
     /** Stores the login entered at program startup so every cloud request can prove who is using it. */
     public static void setCredentials(String enteredUsername, String enteredPassword) {
@@ -36,6 +37,11 @@ public class PayrollAPI {
 
     // Adds the username and password to one request without displaying them in the address bar.
     private static void addLoginHeader(HttpURLConnection connection) {
+
+        if (username == null || password == null) {
+            throw new IllegalStateException("Please log in before connecting to payroll data.");
+        }
+
         String login = username + ":" + password;
         String encodedLogin = Base64.getEncoder().encodeToString(
                 login.getBytes(StandardCharsets.UTF_8)
@@ -74,8 +80,9 @@ public class PayrollAPI {
         if (responseCode != HttpURLConnection.HTTP_OK) {
 
             throw new IOException(
-                    "Server returned HTTP " +
-                            responseCode
+                    responseCode == HttpURLConnection.HTTP_UNAUTHORIZED
+                            ? "Incorrect username or password."
+                            : "Server returned HTTP " + responseCode
             );
         }
 

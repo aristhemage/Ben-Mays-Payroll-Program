@@ -5,6 +5,7 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const { MongoClient, ObjectId } = require("mongodb");
+const crypto = require("crypto");
 
 // Create Express application
 const app = express();
@@ -15,12 +16,13 @@ app.use(cors());
 // Allow JSON request bodies, including a complete payroll backup file.
 app.use(express.json({ limit: "5mb" }));
 
-// These default login details work until you set PAYROLL_USERNAME and PAYROLL_PASSWORD in Render.
-const payrollUsername = process.env.PAYROLL_USERNAME || "worker";
-const payrollPassword = process.env.PAYROLL_PASSWORD || "payroll";
+// Turns a typed password into a value that cannot be turned back into the password.
+function hashPassword(password, salt) {
+    return crypto.scryptSync(password, salt, 64).toString("hex");
+}
 
-// Require the payroll login before allowing any person or program to use the API.
-app.use("/api", (req, res, next) => {
+// Require a valid MongoDB user account before allowing any person or program to use the API.
+app.use("/api", async (req, res, next) => {
 
     const authorization = req.headers.authorization || "";
 
@@ -36,7 +38,17 @@ app.use("/api", (req, res, next) => {
             .toString("utf8")
             .split(":");
 
-    if (username !== payrollUsername || password !== payrollPassword) {
+    const user = await database.collection("payroll_users").findOne({ username });
+
+    const passwordIsCorrect = user
+            && user.passwordSalt
+            && user.passwordHash
+            && crypto.timingSafeEqual(
+                    Buffer.from(hashPassword(password, user.passwordSalt), "hex"),
+                    Buffer.from(user.passwordHash, "hex")
+            );
+
+    if (!passwordIsCorrect) {
         return res.status(401).json({
             success: false,
             message: "Incorrect payroll username or password."
