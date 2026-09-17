@@ -259,7 +259,7 @@ public final class EmployeeTotalsReportGenerator {
 
         String[] headers = {
                 "Period", "Start", "End", "Paid On", "Quarter", "Hours", "OT Hrs",
-                "Rate", "OT Rate", "Extra", "Regular", "OT Pay", "Gross", "Federal",
+                "Rate", "Extra", "Regular", "OT Pay", "Gross", "Federal",
                 "Soc. Sec.", "Medicare", "MD Tax", "BC Tax", "SLG", "Deductions", "Net Pay"
         };
 
@@ -287,7 +287,6 @@ public final class EmployeeTotalsReportGenerator {
                     text(employee.hours[period]),
                     text(employee.ot_hours[period]),
                     text(employee.hourly_rates[period]),
-                    text(employee.ot_rates[period]),
                     text(employee.extra[period]),
                     money(values.get("Regular Pay")),
                     money(values.get("OT Pay")),
@@ -361,7 +360,10 @@ public final class EmployeeTotalsReportGenerator {
         PayrollCalculator calculator = new PayrollCalculator();
 
         double regularPay = calculator.calculateRegularPay(employee.hours[period], employee.hourly_rates[period]);
-        double overtimePay = calculator.calculateOTPay(employee.ot_hours[period], employee.ot_rates[period]);
+        double overtimePay = calculator.calculateOTPay(
+                employee.ot_hours[period],
+                overtimeRate(employee.hourly_rates[period])
+        );
         double bonus = calculator.calculateExtraPay(employee.extra[period]);
         double grossPay = regularPay + overtimePay + bonus;
 
@@ -395,6 +397,11 @@ public final class EmployeeTotalsReportGenerator {
         values.put("Net Pay", netPay);
 
         return values;
+    }
+
+    /** Overtime is always time-and-a-half of the regular hourly rate. */
+    private static String overtimeRate(String hourlyRate) {
+        return String.format("%.2f", value(hourlyRate) * 1.5);
     }
 
     /** Creates all report-total labels with a starting value of zero. */

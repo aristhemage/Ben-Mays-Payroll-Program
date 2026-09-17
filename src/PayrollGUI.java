@@ -108,6 +108,8 @@ public class PayrollGUI {
 
         JButton employeeActionsButton = new JButton("Employee Actions");
 
+        JButton reportsAndChecksButton = new JButton("Reports and Checks");
+
         JButton viewSingleTotalsButton =
                 new JButton("Create PDF Report for this Employee");
 
@@ -119,7 +121,7 @@ public class PayrollGUI {
         employeeControlsPanel.add(previousButton);
         employeeControlsPanel.add(nextButton);
         employeeControlsPanel.add(employeeActionsButton);
-        employeeControlsPanel.add(viewSingleTotalsButton);
+        employeeControlsPanel.add(reportsAndChecksButton);
 
 
         topPanel.add(employeeControlsPanel, BorderLayout.WEST);
@@ -150,11 +152,7 @@ public class PayrollGUI {
 
         JPanel bottomPanel = new JPanel();
 
-        JButton changeHourlyRateButton =
-                new JButton("Mass Change Hourly Rate");
-
-        JButton changeOTRateButton =
-                new JButton("Mass Change OT Rate");
+        JButton massChangeButton = new JButton("Mass Change");
 
         JButton viewTotalsButton =
                 new JButton("View All Employee Totals");
@@ -169,10 +167,7 @@ public class PayrollGUI {
                 new JCheckBox("Simplified Mode");
 
 
-        bottomPanel.add(changeHourlyRateButton);
-        bottomPanel.add(changeOTRateButton);
-        bottomPanel.add(viewTotalsButton);
-        bottomPanel.add(makeCheckButton);
+        bottomPanel.add(massChangeButton);
         bottomPanel.add(simplifiedModeToggle);
 
 
@@ -208,20 +203,71 @@ public class PayrollGUI {
         JMenuItem changeAddressMenuItem = new JMenuItem("Add/Change Address");
         changeAddressMenuItem.addActionListener(e -> makeAddressButton.doClick());
 
+        JPopupMenu reportsAndChecksMenu = new JPopupMenu();
+
+        JMenuItem allEmployeeTotalsMenuItem = new JMenuItem("View All Employee Totals");
+        allEmployeeTotalsMenuItem.addActionListener(e -> viewTotalsButton.doClick());
+
+        JMenuItem employeeReportMenuItem = new JMenuItem("Create PDF Report for this Employee");
+        employeeReportMenuItem.addActionListener(e -> viewSingleTotalsButton.doClick());
+
+        JMenuItem allChecksMenuItem = new JMenuItem("Generate All Checks PDF");
+        allChecksMenuItem.addActionListener(e -> makeCheckButton.doClick());
+
+        reportsAndChecksMenu.add(allEmployeeTotalsMenuItem);
+        reportsAndChecksMenu.add(employeeReportMenuItem);
+        reportsAndChecksMenu.add(allChecksMenuItem);
+
+        reportsAndChecksButton.addActionListener(e -> reportsAndChecksMenu.show(
+                reportsAndChecksButton,
+                0,
+                reportsAndChecksButton.getHeight()
+        ));
+
+        JPopupMenu massChangeMenu = new JPopupMenu();
+
+        JMenuItem hourlyRateMenuItem = new JMenuItem("Hourly Rate");
+        hourlyRateMenuItem.addActionListener(e -> massChangeValue(
+                "hourly rate", PayrollTableManager.HOURLY_RATE
+        ));
+
+        JMenuItem hoursMenuItem = new JMenuItem("Regular Hours");
+        hoursMenuItem.addActionListener(e -> massChangeValue(
+                "regular hours", PayrollTableManager.HOURS
+        ));
+
+        JMenuItem overtimeHoursMenuItem = new JMenuItem("Overtime Hours");
+        overtimeHoursMenuItem.addActionListener(e -> massChangeValue(
+                "overtime hours", PayrollTableManager.OT_HOURS
+        ));
+
+        massChangeMenu.add(hourlyRateMenuItem);
+        massChangeMenu.add(hoursMenuItem);
+        massChangeMenu.add(overtimeHoursMenuItem);
+
+        massChangeButton.addActionListener(e -> massChangeMenu.show(
+                massChangeButton,
+                0,
+                massChangeButton.getHeight()
+        ));
+
         // A hand cursor makes it clear that these controls can be clicked.
         setHandCursor(
                 previousButton,
                 nextButton,
                 employeeActionsButton,
-                viewSingleTotalsButton,
-                changeHourlyRateButton,
-                changeOTRateButton,
-                viewTotalsButton,
-                makeCheckButton,
+                reportsAndChecksButton,
+                massChangeButton,
                 simplifiedModeToggle,
                 addEmployeeMenuItem,
                 removeEmployeeMenuItem,
-                changeAddressMenuItem
+                changeAddressMenuItem,
+                allEmployeeTotalsMenuItem,
+                employeeReportMenuItem,
+                allChecksMenuItem,
+                hourlyRateMenuItem,
+                hoursMenuItem,
+                overtimeHoursMenuItem
         );
 
         employeeActionsMenu.add(addEmployeeMenuItem);
@@ -233,10 +279,6 @@ public class PayrollGUI {
                 0,
                 employeeActionsButton.getHeight()
         ));
-
-        setupHourlyRateButton(changeHourlyRateButton);
-
-        setupOTRateButton(changeOTRateButton);
 
         totalsManager.setupViewTotalsButton(viewTotalsButton);
 
@@ -787,6 +829,56 @@ public class PayrollGUI {
 
 
     // =========================
+    // MASS CHANGE MENU
+    // =========================
+
+    /** Changes the selected pay period and every later pay period for one type of value. */
+    private void massChangeValue(String valueName, int column) {
+
+        tableManager.stopEditing();
+
+        int row = tableManager.getTable().getSelectedRow();
+
+        if (row == -1) {
+            JOptionPane.showMessageDialog(frame, "Please select a pay period first.");
+            return;
+        }
+
+        String newValue = JOptionPane.showInputDialog(
+                frame,
+                "Enter the new " + valueName + " for this and all later pay periods:"
+        );
+
+        if (newValue == null || newValue.trim().isEmpty()) {
+            return;
+        }
+
+        try {
+            double number = Double.parseDouble(newValue.trim());
+
+            if (number < 0) {
+                JOptionPane.showMessageDialog(frame, valueName + " cannot be negative.");
+                return;
+            }
+
+            if (column == PayrollTableManager.HOURLY_RATE) {
+                tableManager.changeHourlyRate(row, newValue);
+            } else {
+                tableManager.changeHours(row, column, newValue);
+            }
+
+            saveCurrentEmployee();
+
+        } catch (NumberFormatException error) {
+            JOptionPane.showMessageDialog(
+                    frame,
+                    "Please enter a valid number for " + valueName + "."
+            );
+        }
+    }
+
+
+    // =========================
     // HOURLY RATE BUTTON
     // =========================
 
@@ -855,78 +947,6 @@ public class PayrollGUI {
                 }
         );
     }
-
-
-    // =========================
-    // OT RATE BUTTON
-    // =========================
-
-    private void setupOTRateButton(JButton button) {
-
-        button.addActionListener(
-                e -> {
-
-                    tableManager.stopEditing();
-
-                    int row =
-                            tableManager.getTable().getSelectedRow();
-
-
-                    if (row == -1) {
-
-                        JOptionPane.showMessageDialog(
-                                frame,
-                                "Please select a pay period first."
-                        );
-
-                        return;
-                    }
-
-
-                    String newRate =
-                            JOptionPane.showInputDialog(
-                                    frame,
-                                    "Enter the new OT rate for the rest of the rows:"
-                            );
-
-
-                    if (newRate == null || newRate.trim().isEmpty()) {
-                        return;
-                    }
-
-
-                    try {
-
-                        double rate =
-                                Double.parseDouble(newRate.trim());
-
-
-                        if (rate < 0) {
-
-                            JOptionPane.showMessageDialog(
-                                    frame,
-                                    "OT rate cannot be negative."
-                            );
-
-                            return;
-                        }
-
-
-                        tableManager.changeOTRate(row, newRate);
-
-                        saveCurrentEmployee();
-
-                    } catch (NumberFormatException error) {
-
-                        JOptionPane.showMessageDialog(
-                                frame,
-                                "Please enter a valid number for the OT rate."
-                        );
-                    }
-                }
-        );
-    }
-
 
     // =========================
     // GENERATE CHECK BUTTON

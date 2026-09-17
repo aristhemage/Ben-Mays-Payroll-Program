@@ -103,7 +103,7 @@ public class PayrollTableManager {
                 "Hours",
                 "OT Hours",
                 "Hourly Rate",
-                "OT Rate",
+                "OT Rate (automatic)",
                 "Extra $",
 
                 "Total Gross",
@@ -128,7 +128,7 @@ public class PayrollTableManager {
 
             @Override
             public boolean isCellEditable(int row, int column) {
-                return column >= HOURS && column <= EXTRA;
+                return column >= HOURS && column <= EXTRA && column != OT_RATE;
             }
         };
 
@@ -142,6 +142,9 @@ public class PayrollTableManager {
         table.getTableHeader().setReorderingAllowed(false);
 
         setColumnWidths();
+
+        // Overtime is always calculated as 1.5 times the hourly rate, so it is never typed in.
+        hideOvertimeRateColumn();
 
         setupValidation();
     }
@@ -211,6 +214,27 @@ public class PayrollTableManager {
         column.setResizable(true);
     }
 
+    // Removes the OT-rate column because it is always 1.5 times the hourly rate.
+    private void hideOvertimeRateColumn() {
+
+        TableColumn column = table.getColumnModel().getColumn(OT_RATE);
+        column.setMinWidth(0);
+        column.setMaxWidth(0);
+        column.setPreferredWidth(0);
+        column.setWidth(0);
+        column.setResizable(false);
+    }
+
+    // Converts an hourly rate into the required time-and-a-half overtime rate.
+    private String calculateOvertimeRate(String hourlyRate) {
+
+        try {
+            return String.format("%.2f", Double.parseDouble(hourlyRate.trim()) * 1.5);
+        } catch (NumberFormatException error) {
+            return "0.00";
+        }
+    }
+
 
     // =========================
     // VALIDATION SETUP
@@ -246,7 +270,7 @@ public class PayrollTableManager {
             return;
         }
 
-        if (column < HOURS || column > EXTRA) {
+        if (column < HOURS || column > EXTRA || column == OT_RATE) {
             return;
         }
 
@@ -350,9 +374,14 @@ public class PayrollTableManager {
                 getValue(row, HOURLY_RATE)
         );
 
+        String overtimeRate = calculateOvertimeRate(getValue(row, HOURLY_RATE));
+
+        // Keep the hidden value current for reports and payroll calculations.
+        tableModel.setValueAt(overtimeRate, row, OT_RATE);
+
         double otPay = calculator.calculateOTPay(
                 getValue(row, OT_HOURS),
-                getValue(row, OT_RATE)
+                overtimeRate
         );
 
         double extra = calculator.calculateExtraPay(
@@ -422,7 +451,7 @@ public class PayrollTableManager {
                     employee.hours[i],
                     employee.ot_hours[i],
                     employee.hourly_rates[i],
-                    employee.ot_rates[i],
+                    calculateOvertimeRate(employee.hourly_rates[i]),
                     employee.extra[i],
 
                     "",
@@ -461,7 +490,7 @@ public class PayrollTableManager {
             employee.hours[i] = getValue(i, HOURS);
             employee.ot_hours[i] = getValue(i, OT_HOURS);
             employee.hourly_rates[i] = getValue(i, HOURLY_RATE);
-            employee.ot_rates[i] = getValue(i, OT_RATE);
+            employee.ot_rates[i] = calculateOvertimeRate(employee.hourly_rates[i]);
             employee.extra[i] = getValue(i, EXTRA);
         }
     }
@@ -496,32 +525,31 @@ public class PayrollTableManager {
 
 
     // =========================
-    // CHANGE OT RATE
+    // MASS CHANGE HOURS
     // =========================
 
-    public void changeOTRate(int row, String newRate) {
+    /** Changes the selected row and every later row for either regular or overtime hours. */
+    public void changeHours(int row, int hoursColumn, String newHours) {
+
+        if (hoursColumn != HOURS && hoursColumn != OT_HOURS) {
+            return;
+        }
 
         try {
+            double hours = Double.parseDouble(newHours.trim());
 
-            double rate = Double.parseDouble(newRate.trim());
-
-            if (rate < 0) {
+            if (hours < 0) {
                 return;
             }
 
-            tableModel.setValueAt(newRate.trim(), row, OT_RATE);
-
-            for (int i = row + 1; i < tableModel.getRowCount(); i++) {
-                tableModel.setValueAt(newRate.trim(), i, OT_RATE);
+            for (int i = row; i < tableModel.getRowCount(); i++) {
+                tableModel.setValueAt(newHours.trim(), i, hoursColumn);
                 calculateRow(i);
             }
-
-            calculateRow(row);
 
         } catch (NumberFormatException ignored) {
         }
     }
-
 
     // =========================
     // CALCULATE TOTALS
@@ -592,7 +620,7 @@ public class PayrollTableManager {
 
             double otPay = calculator.calculateOTPay(
                     employee.ot_hours[i],
-                    employee.ot_rates[i]
+                    calculateOvertimeRate(employee.hourly_rates[i])
             );
 
             double extra = calculator.calculateExtraPay(employee.extra[i]);
