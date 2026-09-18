@@ -503,8 +503,9 @@ public class PayrollAPI {
         if (responseCode != HttpURLConnection.HTTP_OK) {
 
             throw new IOException(
-                    "Server returned HTTP " +
-                            responseCode
+                    responseCode == HttpURLConnection.HTTP_UNAUTHORIZED
+                            ? "Incorrect username or password."
+                            : "Server returned HTTP " + responseCode
             );
         }
 

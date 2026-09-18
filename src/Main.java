@@ -1,6 +1,8 @@
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -29,46 +31,102 @@ public class Main {
     /** Asks for the payroll login before the program downloads any cloud data. */
     private static boolean showLoginWindow() {
 
-        JPanel panel = new JPanel(new GridLayout(2, 2, 8, 8));
+        JDialog loginWindow = new JDialog(
+                (JFrame) null,
+                "Payroll Manager Login",
+                true
+        );
+
+        JPanel panel = new JPanel(new GridLayout(0, 2, 8, 8));
+        panel.setBorder(new EmptyBorder(18, 20, 18, 20));
+
         JTextField usernameField = new JTextField();
         JPasswordField passwordField = new JPasswordField();
+        JLabel statusLabel = new JLabel(" ");
+        JButton loginButton = new JButton("Log In");
+        JButton cancelButton = new JButton("Cancel");
+        boolean[] loginConfirmed = {false};
 
         panel.add(new JLabel("Username:"));
         panel.add(usernameField);
         panel.add(new JLabel("Password:"));
         panel.add(passwordField);
 
-        while (true) {
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
+        buttonPanel.add(cancelButton);
+        buttonPanel.add(loginButton);
 
-            int choice = JOptionPane.showConfirmDialog(
-                    null,
-                    panel,
-                    "Payroll Manager Login",
-                    JOptionPane.OK_CANCEL_OPTION,
-                    JOptionPane.PLAIN_MESSAGE
-            );
+        JPanel windowContents = new JPanel(new BorderLayout(8, 12));
+        windowContents.add(panel, BorderLayout.CENTER);
+        windowContents.add(statusLabel, BorderLayout.NORTH);
+        windowContents.add(buttonPanel, BorderLayout.SOUTH);
 
-            if (choice != JOptionPane.OK_OPTION) {
-                return false;
-            }
+        loginWindow.setContentPane(windowContents);
+        loginWindow.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+        loginWindow.setResizable(false);
+        loginWindow.pack();
+        loginWindow.setSize(360, loginWindow.getHeight());
+        loginWindow.setLocationRelativeTo(null);
+
+        cancelButton.addActionListener(e -> loginWindow.dispose());
+
+        loginButton.addActionListener(e -> {
 
             String username = usernameField.getText().trim();
             String password = new String(passwordField.getPassword());
 
-            if (!username.isEmpty() && !password.isEmpty()) {
-                PayrollAPI.setCredentials(username, password);
-                return true;
+            if (username.isEmpty() || password.isEmpty()) {
+                statusLabel.setForeground(new Color(170, 30, 30));
+                statusLabel.setText("Enter both a username and password.");
+                return;
             }
 
-            JOptionPane.showMessageDialog(
-                    null,
-                    "Please enter both a username and password.",
-                    "Missing Login Details",
-                    JOptionPane.ERROR_MESSAGE
-            );
+            // Keep the login window responsive while the server confirms the credentials.
+            loginButton.setEnabled(false);
+            cancelButton.setEnabled(false);
+            statusLabel.setForeground(new Color(50, 80, 130));
+            statusLabel.setText("Checking login...");
 
-            passwordField.setText("");
-        }
+            PayrollAPI.setCredentials(username, password);
+
+            Thread loginChecker = new Thread(() -> {
+                try {
+
+                    // The protected version request confirms the login without downloading payroll records.
+                    PayrollAPI.getLatestVersion();
+
+                    SwingUtilities.invokeLater(() -> {
+                        loginConfirmed[0] = true;
+                        loginWindow.dispose();
+                    });
+
+                } catch (Exception error) {
+
+                    SwingUtilities.invokeLater(() -> {
+                        statusLabel.setForeground(new Color(170, 30, 30));
+
+                        if ("Incorrect username or password.".equals(error.getMessage())) {
+                            statusLabel.setText("Username or password is incorrect.");
+                        } else {
+                            statusLabel.setText("Could not reach the server. Please try again.");
+                        }
+
+                        passwordField.setText("");
+                        loginButton.setEnabled(true);
+                        cancelButton.setEnabled(true);
+                    });
+                }
+            }, "Payroll Login Checker");
+
+            loginChecker.setDaemon(true);
+            loginChecker.start();
+        });
+
+        passwordField.addActionListener(e -> loginButton.doClick());
+
+        loginWindow.setVisible(true);
+
+        return loginConfirmed[0];
     }
 
     // Shows a window immediately so the user knows the app is working. Abby has no patience and spams open file.
@@ -108,6 +166,19 @@ public class Main {
 
         Thread loader = new Thread(() -> {
             try {
+
+                // Do not load payroll data until this installed copy matches the version approved on the server.
+                String latestVersion = PayrollAPI.getLatestVersion();
+
+                if (!AppVersion.VERSION.equals(latestVersion)) {
+                    SwingUtilities.invokeLater(() -> showRequiredUpdateAndExit(
+                            loadingWindow,
+                            latestVersion
+                    ));
+
+                    return;
+                }
+
                 // Download the employees from the database and put them into the program.
                 EmployeeManager employeeManager = createEmployeeManager();
 
@@ -116,9 +187,6 @@ public class Main {
                     // The data is ready, so close the loading screen and open the main program.
                     loadingWindow.dispose();
                     new PayrollGUI(employeeManager);
-
-                    // Check for a newer version without interrupting the user.
-                    checkForUpdatesInBackground();
                 });
 
             } catch (Exception error) {
@@ -152,6 +220,24 @@ public class Main {
         loader.start();
     }
 
+    /** Stops an outdated copy before it can view or change shared payroll data. */
+    private static void showRequiredUpdateAndExit(JFrame loadingWindow, String latestVersion) {
+
+        loadingWindow.dispose();
+
+        JOptionPane.showMessageDialog(
+                null,
+                "An update is required before Payroll Manager can be used.\n\n"
+                        + "Your version: " + AppVersion.VERSION + "\n"
+                        + "Required version: " + latestVersion + "\n\n"
+                        + "Please contact Jacob for the latest version.",
+                "Update Required",
+                JOptionPane.ERROR_MESSAGE
+        );
+
+        System.exit(0);
+    }
+
     // Creates the app's employee list from the data returned by the server.
     private static EmployeeManager createEmployeeManager() throws IOException {
 
@@ -176,41 +262,6 @@ public class Main {
         }
 
         return employeeManager;
-    }
-
-    // Checks for updates after the main payroll window is already open.
-    private static void checkForUpdatesInBackground() {
-
-        Thread versionChecker = new Thread(() -> {
-
-            try {
-
-                String latestVersion = PayrollAPI.getLatestVersion();
-
-                if (!AppVersion.VERSION.equals(latestVersion)) {
-
-                    SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(
-                            null,
-                            "A newer version of Payroll Manager is available.\n\n" +
-                                    "Your version: " + AppVersion.VERSION + "\n" +
-                                    "Latest version: " + latestVersion + "\n\n" +
-                                    "Please contact Jacob for the latest version.",
-                            "Update Available",
-                            JOptionPane.WARNING_MESSAGE
-                    ));
-                }
-
-            } catch (IOException error) {
-
-                // A version-check failure should never interrupt the payroll app.
-                System.out.println("Could not check for program updates.");
-                error.printStackTrace();
-            }
-        }, "Payroll Version Checker");
-
-        versionChecker.setDaemon(true);
-        // Run independently so a slow version check never delays payroll work.
-        versionChecker.start();
     }
 
 }
